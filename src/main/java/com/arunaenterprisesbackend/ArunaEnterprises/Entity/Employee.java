@@ -22,7 +22,7 @@ public class Employee {
     @Column(nullable = false,unique = true)
     private String name;
 
-    @Column(nullable = false,unique = true)
+    @Column(unique = true)
     private String email;
 
     @Column(nullable = false)
@@ -34,6 +34,10 @@ public class Employee {
     private String phoneNumber;
 
     private LocalDate joinedAt;
+
+    private String bloodGroup;
+
+    private String dob;
 
     @Lob
     @Column(name = "barcode_image", columnDefinition = "LONGBLOB")
