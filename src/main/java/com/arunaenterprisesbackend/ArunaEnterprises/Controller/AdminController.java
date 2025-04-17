@@ -71,7 +71,7 @@ public class AdminController {
     @PostMapping("/register-employee")
     public ResponseEntity<String> registerEmployee(@RequestBody EmployeeRegister employeeRegister) {
         try {
-            // Create a new employee entity
+            // Convert DTO to Entity
             Employee employee = new Employee();
             employee.setName(employeeRegister.getName());
             employee.setEmail(employeeRegister.getEmail());
@@ -79,16 +79,18 @@ public class AdminController {
             employee.setGender(employeeRegister.getGender());
             employee.setPhoneNumber(employeeRegister.getPhoneNumber());
 
-            // Generate joinedAt and barcodeId
+            // Set joinedAt manually
             employee.setJoinedAt(LocalDate.now());
+
+            // Generate barcodeId manually
             String barcodeId = UUID.randomUUID().toString().substring(0, 10).toUpperCase();
             employee.setBarcodeId(barcodeId);
 
-            // Generate barcode image
+            // Generate barcode image using the correct barcodeId
             byte[] barcodeImage = BarcodeGenerator.generateBarcodeImage(barcodeId);
             employee.setBarcodeImage(barcodeImage);
 
-            // Save to DB once
+            // Save employee with barcodeId and image
             employeeRepository.save(employee);
 
             return ResponseEntity.ok("Employee registered with Barcode ID: " + barcodeId);
@@ -97,7 +99,6 @@ public class AdminController {
                     .body("Failed to register employee: " + e.getMessage());
         }
     }
-
 
     @GetMapping("/employee/barcode-image/{id}")
     public ResponseEntity<byte[]> getBarcodeImage(@PathVariable Long id) {

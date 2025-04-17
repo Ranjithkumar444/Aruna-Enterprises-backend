@@ -43,14 +43,6 @@ public class Employee {
     @Column(name = "barcode_image", columnDefinition = "LONGBLOB")
     private byte[] barcodeImage;
 
-    @PrePersist
-    public void prePersist() {
-        this.joinedAt = LocalDate.now();
-        this.barcodeId = generateRandomBarcodeId();
-    }
 
-    private String generateRandomBarcodeId() {
-        return UUID.randomUUID().toString().substring(0, 10).toUpperCase(); // 10-char unique barcode ID
-    }
 
 }
