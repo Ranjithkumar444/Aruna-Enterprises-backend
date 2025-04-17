@@ -8,6 +8,7 @@ import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Employee;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.AdminRepository;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.EmployeeRepository;
 import com.arunaenterprisesbackend.ArunaEnterprises.Service.AdminService;
+import com.arunaenterprisesbackend.ArunaEnterprises.Service.EmployeeService;
 import com.arunaenterprisesbackend.ArunaEnterprises.Service.JWTService;
 import com.arunaenterprisesbackend.ArunaEnterprises.Utility.BarcodeGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,6 +38,9 @@ public class AdminController {
     private SecurityConfig securityConfig;
     @Autowired
     private EmployeeRepository employeeRepository;
+    @Autowired
+    private EmployeeService employeeService;
+
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@RequestBody Admin admin) {
@@ -71,34 +75,14 @@ public class AdminController {
     @PostMapping("/register-employee")
     public ResponseEntity<String> registerEmployee(@RequestBody EmployeeRegister employeeRegister) {
         try {
-            // Convert DTO to Entity
-            Employee employee = new Employee();
-            employee.setName(employeeRegister.getName());
-            employee.setEmail(employeeRegister.getEmail());
-            employee.setUnit(employeeRegister.getUnit());
-            employee.setGender(employeeRegister.getGender());
-            employee.setPhoneNumber(employeeRegister.getPhoneNumber());
-
-            // Set joinedAt manually
-            employee.setJoinedAt(LocalDate.now());
-
-            // Generate barcodeId manually
-            String barcodeId = UUID.randomUUID().toString().substring(0, 10).toUpperCase();
-            employee.setBarcodeId(barcodeId);
-
-            // Generate barcode image using the correct barcodeId
-            byte[] barcodeImage = BarcodeGenerator.generateBarcodeImage(barcodeId);
-            employee.setBarcodeImage(barcodeImage);
-
-            // Save employee with barcodeId and image
-            employeeRepository.save(employee);
-
-            return ResponseEntity.ok("Employee registered with Barcode ID: " + barcodeId);
+            String response = employeeService.registerEmployee(employeeRegister);
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Failed to register employee: " + e.getMessage());
         }
     }
+
 
     @GetMapping("/employee/barcode-image/{id}")
     public ResponseEntity<byte[]> getBarcodeImage(@PathVariable Long id) {
