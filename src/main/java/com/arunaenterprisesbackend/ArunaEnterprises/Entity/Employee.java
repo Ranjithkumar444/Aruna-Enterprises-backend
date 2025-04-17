@@ -37,12 +37,9 @@ public class Employee {
 
     private String bloodGroup;
 
-    private String dob;
+    private LocalDate dob;
 
     @Lob
     @Column(name = "barcode_image", columnDefinition = "LONGBLOB")
     private byte[] barcodeImage;
-
-
-
 }
