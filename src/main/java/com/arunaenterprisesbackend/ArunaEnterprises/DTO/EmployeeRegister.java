@@ -1,7 +1,6 @@
 package com.arunaenterprisesbackend.ArunaEnterprises.DTO;
 
 import lombok.*;
-import org.springframework.stereotype.Service;
 
 @Data
 @NoArgsConstructor
@@ -14,4 +13,6 @@ public class EmployeeRegister {
     private String unit;
     private String gender;
     private String phoneNumber;
+    private String dob;
+    private String bloodGroup;
 }

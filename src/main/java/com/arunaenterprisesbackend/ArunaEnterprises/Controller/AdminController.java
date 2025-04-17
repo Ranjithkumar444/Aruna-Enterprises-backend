@@ -8,15 +8,14 @@ import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Employee;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.AdminRepository;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.EmployeeRepository;
 import com.arunaenterprisesbackend.ArunaEnterprises.Service.AdminService;
+import com.arunaenterprisesbackend.ArunaEnterprises.Service.EmployeeService;
 import com.arunaenterprisesbackend.ArunaEnterprises.Service.JWTService;
 import com.arunaenterprisesbackend.ArunaEnterprises.Utility.BarcodeGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -37,6 +36,8 @@ public class AdminController {
     private SecurityConfig securityConfig;
     @Autowired
     private EmployeeRepository employeeRepository;
+    @Autowired
+    private EmployeeService employeeService;
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@RequestBody Admin admin) {
@@ -71,27 +72,8 @@ public class AdminController {
     @PostMapping("/register-employee")
     public ResponseEntity<String> registerEmployee(@RequestBody EmployeeRegister employeeRegister) {
         try {
-            // Create a new employee entity
-            Employee employee = new Employee();
-            employee.setName(employeeRegister.getName());
-            employee.setEmail(employeeRegister.getEmail());
-            employee.setUnit(employeeRegister.getUnit());
-            employee.setGender(employeeRegister.getGender());
-            employee.setPhoneNumber(employeeRegister.getPhoneNumber());
-
-            // Generate joinedAt and barcodeId
-            employee.setJoinedAt(LocalDate.now());
-            String barcodeId = UUID.randomUUID().toString().substring(0, 10).toUpperCase();
-            employee.setBarcodeId(barcodeId);
-
-            // Generate barcode image
-            byte[] barcodeImage = BarcodeGenerator.generateBarcodeImage(barcodeId);
-            employee.setBarcodeImage(barcodeImage);
-
-            // Save to DB once
-            employeeRepository.save(employee);
-
-            return ResponseEntity.ok("Employee registered with Barcode ID: " + barcodeId);
+            String response = employeeService.registerEmployee(employeeRegister);
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Failed to register employee: " + e.getMessage());

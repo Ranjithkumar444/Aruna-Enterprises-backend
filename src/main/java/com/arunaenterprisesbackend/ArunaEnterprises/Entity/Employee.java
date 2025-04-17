@@ -19,7 +19,7 @@ public class Employee {
 
     private String barcodeId;
 
-    @Column(nullable = false,unique = true)
+    @Column(nullable = false, unique = true)
     private String name;
 
     @Column(unique = true)
@@ -37,20 +37,9 @@ public class Employee {
 
     private String bloodGroup;
 
-    private String dob;
+    private LocalDate dob;
 
     @Lob
     @Column(name = "barcode_image", columnDefinition = "LONGBLOB")
     private byte[] barcodeImage;
-
-    @PrePersist
-    public void prePersist() {
-        this.joinedAt = LocalDate.now();
-        this.barcodeId = generateRandomBarcodeId();
-    }
-
-    private String generateRandomBarcodeId() {
-        return UUID.randomUUID().toString().substring(0, 10).toUpperCase(); // 10-char unique barcode ID
-    }
-
 }
