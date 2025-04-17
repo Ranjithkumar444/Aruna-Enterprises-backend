@@ -14,4 +14,6 @@ public class EmployeeRegister {
     private String unit;
     private String gender;
     private String phoneNumber;
+    private String bloodGroup;
+    private String dob;
 }
