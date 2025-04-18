@@ -39,7 +39,7 @@ public class AdminController {
     @Autowired
     private EmployeeRepository employeeRepository;
     @Autowired
-    private EmployeeService employeeService;
+    private EmployeeService employeeServic
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@RequestBody Admin admin) {
