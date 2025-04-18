@@ -18,6 +18,7 @@ public class EmployeeService {
     private EmployeeRepository employeeRepository;
 
     public String registerEmployee(EmployeeRegister employeeRegister) throws Exception {
+        Employee employee = new Employee();
 
         if (employeeRepository.existsByEmail(employeeRegister.getEmail())) {
             throw new RuntimeException("Email already registered");
@@ -29,13 +30,21 @@ public class EmployeeService {
 
         Employee employee = new Employee();
 
-        // Map DTO fields to entity
         employee.setName(employeeRegister.getName());
         employee.setEmail(employeeRegister.getEmail());
         employee.setUnit(employeeRegister.getUnit());
         employee.setGender(employeeRegister.getGender());
         employee.setPhoneNumber(employeeRegister.getPhoneNumber());
         employee.setBloodGroup(employeeRegister.getBloodGroup());
+
+        employee.setDob(LocalDate.parse(employeeRegister.getDob())); // expects yyyy-MM-dd
+
+        String barcodeId = UUID.randomUUID().toString().substring(0, 10).toUpperCase();
+        employee.setBarcodeId(barcodeId);
+        employee.setBarcodeImage(BarcodeGenerator.generateBarcodeImage(barcodeId));
+
+        // Set joinedAt
+        employee.setJoinedAt(LocalDate.now());
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         employee.setDob(LocalDate.parse(employeeRegister.getDob(), formatter));

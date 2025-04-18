@@ -15,12 +15,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -39,8 +39,7 @@ public class AdminController {
     @Autowired
     private EmployeeRepository employeeRepository;
     @Autowired
-    private EmployeeService employeeService;
-
+    private EmployeeService employeeServic
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@RequestBody Admin admin) {
@@ -63,8 +62,14 @@ public class AdminController {
 
     @PostMapping("/create")
     public ResponseEntity<?> createAdmin(@RequestBody Admin admin) {
+        if (adminRepository.existsByEmail(admin.getEmail())) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of("message", "Admin with this email already exists"));
+        }
+
         admin.setPassword(passwordEncoder.encode(admin.getPassword()));
-        return ResponseEntity.ok(adminRepository.save(admin));
+        Admin savedAdmin = adminRepository.save(admin);
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedAdmin);
     }
 
     @GetMapping("/dashboard")
@@ -91,6 +96,18 @@ public class AdminController {
         return ResponseEntity.ok()
                 .contentType(MediaType.IMAGE_PNG)
                 .body(employee.getBarcodeImage());
+    }
+
+    @GetMapping("/get-employees")
+    public ResponseEntity<List<Employee>> getAllEmployees(){
+        List<Employee> employees = employeeRepository.findAll();
+        return ResponseEntity.ok(employees);
+    }
+
+    @GetMapping("/get-admins")
+    public ResponseEntity<List<Admin>> getAllAdmins(){
+        List<Admin> admins = adminRepository.findAll();
+        return ResponseEntity.ok(admins);
     }
 
 

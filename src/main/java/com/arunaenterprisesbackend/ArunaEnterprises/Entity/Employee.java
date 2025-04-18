@@ -19,7 +19,7 @@ public class Employee {
 
     private String barcodeId;
 
-    @Column(nullable = false,unique = true)
+    @Column(nullable = false, unique = true)
     private String name;
 
     @Column(unique = true)
