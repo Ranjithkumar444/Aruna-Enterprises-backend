@@ -26,10 +26,8 @@ public class EmployeeService {
         employee.setPhoneNumber(employeeRegister.getPhoneNumber());
         employee.setBloodGroup(employeeRegister.getBloodGroup());
 
-        // Parse DOB
         employee.setDob(LocalDate.parse(employeeRegister.getDob())); // expects yyyy-MM-dd
 
-        // Generate barcode ID and image
         String barcodeId = UUID.randomUUID().toString().substring(0, 10).toUpperCase();
         employee.setBarcodeId(barcodeId);
         employee.setBarcodeImage(BarcodeGenerator.generateBarcodeImage(barcodeId));

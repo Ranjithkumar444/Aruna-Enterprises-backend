@@ -12,7 +12,7 @@ public class Admin {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
-    @Column(nullable = false,unique = true)
+    @Column(name = "user_name",nullable = false,unique = true)
     private String userName;
     @Column(nullable = false)
     private String firstName;
