@@ -18,16 +18,15 @@ public class AdminDataSeeder implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        if (adminRepository.findByEmail("admin@example.com") == null) {
+        if (adminRepository.findByEmail("ranjith.v.kumar444@gmail.com") == null) {
             Admin admin = new Admin();
-            admin.setUserName("admin123");
+            admin.setUserName("RanjithKumar");
             admin.setFirstName("Ranjith");
             admin.setLastName("Kumar");
-            admin.setEmail("admin@example.com");
-            admin.setPassword(passwordEncoder.encode("admin@123"));
+            admin.setEmail("ranjith.v.kumar444@gmail.com");
+            admin.setPassword(passwordEncoder.encode("ranjith1234"));
             admin.setPhoneNumber("9876543210");
             admin.setGender("Male");
-
             adminRepository.save(admin);
             System.out.println("Admin inserted successfully.");
         }

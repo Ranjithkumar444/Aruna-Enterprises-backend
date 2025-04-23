@@ -15,6 +15,4 @@ public class EmployeeRegister {
     private String phoneNumber;
     private String dob;
     private String bloodGroup;
-    private String bloodGroup;
-    private String dob;
 }
