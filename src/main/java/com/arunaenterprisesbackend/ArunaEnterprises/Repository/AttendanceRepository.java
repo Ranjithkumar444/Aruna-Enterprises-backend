@@ -21,5 +21,7 @@ public interface AttendanceRepository extends JpaRepository<Attendance,Long> {
 
     Attendance findByBarcodeIdAndDate(String barcodeId, LocalDate date);
 
-    Page<Attendance> findByDate(LocalDate date, Pageable pageable);
+    List<Attendance> findByDate(LocalDate date);
+
+    List<Attendance> findByDateBetween(LocalDate startDate, LocalDate endDate);
 }
