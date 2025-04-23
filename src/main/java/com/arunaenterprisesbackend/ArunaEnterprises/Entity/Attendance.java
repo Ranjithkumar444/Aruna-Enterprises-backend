@@ -1,6 +1,5 @@
 package com.arunaenterprisesbackend.ArunaEnterprises.Entity;
 
-
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -31,4 +30,7 @@ public class Attendance {
 
     @Enumerated(EnumType.STRING)
     private AttendanceStatus status;
+
+    @Column(name = "checked_in")
+    private boolean checkedIn;
 }

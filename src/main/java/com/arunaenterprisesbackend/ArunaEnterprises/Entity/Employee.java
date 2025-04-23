@@ -3,9 +3,8 @@ package com.arunaenterprisesbackend.ArunaEnterprises.Entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-
 import java.time.LocalDate;
-import java.util.UUID;
+
 
 @Entity
 @Table(name = "employee")
@@ -42,4 +41,5 @@ public class Employee {
     @Lob
     @Column(name = "barcode_image", columnDefinition = "LONGBLOB")
     private byte[] barcodeImage;
+
 }

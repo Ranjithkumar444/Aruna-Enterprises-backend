@@ -18,8 +18,6 @@ public class EmployeeService {
     private EmployeeRepository employeeRepository;
 
     public String registerEmployee(EmployeeRegister employeeRegister) throws Exception {
-        Employee employee = new Employee();
-
         if (employeeRepository.existsByEmail(employeeRegister.getEmail())) {
             throw new RuntimeException("Email already registered");
         }
@@ -27,9 +25,7 @@ public class EmployeeService {
             throw new RuntimeException("Name already registered");
         }
 
-
         Employee employee = new Employee();
-
         employee.setName(employeeRegister.getName());
         employee.setEmail(employeeRegister.getEmail());
         employee.setUnit(employeeRegister.getUnit());
@@ -37,33 +33,20 @@ public class EmployeeService {
         employee.setPhoneNumber(employeeRegister.getPhoneNumber());
         employee.setBloodGroup(employeeRegister.getBloodGroup());
 
-        employee.setDob(LocalDate.parse(employeeRegister.getDob())); // expects yyyy-MM-dd
-
-        String barcodeId = UUID.randomUUID().toString().substring(0, 10).toUpperCase();
-        employee.setBarcodeId(barcodeId);
-        employee.setBarcodeImage(BarcodeGenerator.generateBarcodeImage(barcodeId));
-
-        // Set joinedAt
-        employee.setJoinedAt(LocalDate.now());
-
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         employee.setDob(LocalDate.parse(employeeRegister.getDob(), formatter));
 
-
-        // Set current date
         employee.setJoinedAt(LocalDate.now());
 
-        // Generate barcode ID
         String barcodeId = UUID.randomUUID().toString().substring(0, 10).toUpperCase();
         employee.setBarcodeId(barcodeId);
 
-        // Generate barcode image
         byte[] barcodeImage = BarcodeGenerator.generateBarcodeImage(barcodeId);
         employee.setBarcodeImage(barcodeImage);
 
-        // Save to DB
         employeeRepository.save(employee);
 
         return "Employee registered with Barcode ID: " + barcodeId;
     }
+
 }

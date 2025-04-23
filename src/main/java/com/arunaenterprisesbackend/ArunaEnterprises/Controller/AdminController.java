@@ -1,17 +1,24 @@
 package com.arunaenterprisesbackend.ArunaEnterprises.Controller;
 
 import com.arunaenterprisesbackend.ArunaEnterprises.Config.SecurityConfig;
+import com.arunaenterprisesbackend.ArunaEnterprises.DTO.AttendanceResponseDTO;
 import com.arunaenterprisesbackend.ArunaEnterprises.DTO.EmployeeRegister;
 import com.arunaenterprisesbackend.ArunaEnterprises.DTO.LoginResponse;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Admin;
+import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Attendance;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Employee;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.AdminRepository;
+import com.arunaenterprisesbackend.ArunaEnterprises.Repository.AttendanceRepository;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.EmployeeRepository;
 import com.arunaenterprisesbackend.ArunaEnterprises.Service.AdminService;
 import com.arunaenterprisesbackend.ArunaEnterprises.Service.EmployeeService;
 import com.arunaenterprisesbackend.ArunaEnterprises.Service.JWTService;
-import com.arunaenterprisesbackend.ArunaEnterprises.Utility.BarcodeGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -19,10 +26,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
+import java.util.stream.Collectors;
 
+@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/admin")
 public class AdminController {
@@ -39,7 +48,10 @@ public class AdminController {
     @Autowired
     private EmployeeRepository employeeRepository;
     @Autowired
-    private EmployeeService employeeServic
+    private EmployeeService employeeService;
+
+    @Autowired
+    private AttendanceRepository attendanceRepository;
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@RequestBody Admin admin) {
@@ -87,28 +99,5 @@ public class AdminController {
                     .body("Failed to register employee: " + e.getMessage());
         }
     }
-
-
-    @GetMapping("/employee/barcode-image/{id}")
-    public ResponseEntity<byte[]> getBarcodeImage(@PathVariable Long id) {
-        Employee employee = employeeRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Employee not found"));
-        return ResponseEntity.ok()
-                .contentType(MediaType.IMAGE_PNG)
-                .body(employee.getBarcodeImage());
-    }
-
-    @GetMapping("/get-employees")
-    public ResponseEntity<List<Employee>> getAllEmployees(){
-        List<Employee> employees = employeeRepository.findAll();
-        return ResponseEntity.ok(employees);
-    }
-
-    @GetMapping("/get-admins")
-    public ResponseEntity<List<Admin>> getAllAdmins(){
-        List<Admin> admins = adminRepository.findAll();
-        return ResponseEntity.ok(admins);
-    }
-
 
 }
