@@ -126,17 +126,13 @@ public class AdminController {
     public ResponseEntity<List<AttendanceResponseDTO>> getAttendanceByDate(
             @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
 
-        // Get all employees
         List<Employee> employees = employeeRepository.findAll();
 
-        // Get attendance records for the date
         List<Attendance> attendanceRecords = attendanceRepository.findByDate(date);
 
-        // Create a map for quick lookup
         Map<String, Attendance> attendanceMap = attendanceRecords.stream()
                 .collect(Collectors.toMap(Attendance::getBarcodeId, Function.identity()));
 
-        // Prepare response
         List<AttendanceResponseDTO> response = employees.stream()
                 .map(employee -> {
                     Attendance attendance = attendanceMap.get(employee.getBarcodeId());
