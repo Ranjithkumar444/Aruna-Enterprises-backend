@@ -16,6 +16,7 @@ public class Employee {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
+    @Column(unique = true)
     private String barcodeId;
 
     @Column(nullable = false, unique = true)

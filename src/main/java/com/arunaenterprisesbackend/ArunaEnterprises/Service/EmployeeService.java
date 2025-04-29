@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Random;
 import java.util.UUID;
 
 @Service
@@ -38,15 +39,29 @@ public class EmployeeService {
 
         employee.setJoinedAt(LocalDate.now());
 
-        String barcodeId = UUID.randomUUID().toString().substring(0, 10).toUpperCase();
-        employee.setBarcodeId(barcodeId);
+        String barcodeID = generateBarcodeId();
+        employee.setBarcodeId(barcodeID);
 
-        byte[] barcodeImage = BarcodeGenerator.generateBarcodeImage(barcodeId);
+        byte[] barcodeImage = BarcodeGenerator.generateBarcodeImage(barcodeID);
         employee.setBarcodeImage(barcodeImage);
 
         employeeRepository.save(employee);
 
-        return "Employee registered with Barcode ID: " + barcodeId;
+        return "Employee registered with Barcode ID: " + barcodeID;
+    }
+
+    public String generateBarcodeId() {
+        Random random = new Random();
+        String barcodeId;
+        Employee existingEmployee;
+
+        do {
+            int randomNumber = 100 + random.nextInt(900);
+            barcodeId = "EMP-" + randomNumber;
+            existingEmployee = employeeRepository.findByBarcodeId(barcodeId);
+        } while (existingEmployee != null);
+
+        return barcodeId;
     }
 
 }
