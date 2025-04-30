@@ -101,7 +101,7 @@ public class AdminController {
         }
     }
 
-    @GetMapping("/employee/barcode-image/{id}")
+        @GetMapping("/employee/barcode-image/{id}")
     public ResponseEntity<byte[]> getBarcodeImage(@PathVariable Long id) {
         Employee employee = employeeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Employee not found"));

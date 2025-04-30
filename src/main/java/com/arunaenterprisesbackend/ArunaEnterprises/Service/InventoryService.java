@@ -19,9 +19,7 @@ public class InventoryService {
     public ReelRepository reelRepository;
 
     public String registerReel(ReelDTO reeldata) throws Exception {
-
         Reel reel = new Reel();
-
         reel.setSize(reeldata.getSize());
         reel.setStatus(ReelStatus.valueOf(reeldata.getStatus()));
         reel.setQuality(reeldata.getQuality());
@@ -30,14 +28,27 @@ public class InventoryService {
         reel.setCreatedBy(reeldata.getCreatedBy());
         reel.setSupplierName(reeldata.getSupplierName());
 
-        String barcodeId = String.valueOf(UUID.randomUUID());
+        reelRepository.save(reel);
+
+        String temp = reel.getArrivalDate().toString();
+        StringBuilder dateBuilder = new StringBuilder();
+        for(int i=0;i<temp.length();i++){
+            if(temp.charAt(i) != '-'){
+                dateBuilder.append(temp.charAt(i));
+            }
+        }
+
+        String datestr = dateBuilder.toString();
+
+        String barcodeId = "REEL-" + reel.getId() + datestr;
         reel.setBarcodeId(barcodeId);
 
         byte[] barcodeImage = BarcodeGenerator.generateBarcodeImage(barcodeId);
-        reel.setBarcodeImage(barcodeId);
+        reel.setBarcodeImage(barcodeImage);
 
         reelRepository.save(reel);
 
-        return "Reel Register with ID" + barcodeId;
+        return "Reel Registered with ID " + barcodeId;
     }
+
 }

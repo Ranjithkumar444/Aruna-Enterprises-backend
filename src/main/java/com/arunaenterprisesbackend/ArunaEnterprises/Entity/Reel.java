@@ -11,8 +11,12 @@ import java.time.LocalDate;
 @Setter
 @Getter
 public class Reel {
+
     @Id
-    @Column(name = "barcode_id", length = 50, nullable = false)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "barcode_id", unique = true, length = 50)
     private String barcodeId;
 
     @Column(length = 50)
@@ -33,8 +37,9 @@ public class Reel {
     @Column(length = 50)
     private ReelStatus status;
 
-    @Column(name = "barcode_image", columnDefinition = "TEXT")
-    private String barcodeImage;
+    @Lob
+    @Column(name = "barcode_image", columnDefinition = "LONGBLOB")
+    private byte[] barcodeImage;
 
     @Column(name = "created_by", length = 100)
     private String createdBy;
