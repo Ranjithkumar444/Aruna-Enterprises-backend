@@ -12,6 +12,7 @@ import java.time.LocalDate;
 public class ReelDTO {
     private String size;
     private Double weight;
+    private Double intitalWeight;
     private String quality;
     private String supplierName;
     private LocalDate arrivalDate;

@@ -1,15 +1,23 @@
 package com.arunaenterprisesbackend.ArunaEnterprises.Controller;
 
 import com.arunaenterprisesbackend.ArunaEnterprises.DTO.Barcode;
+import com.arunaenterprisesbackend.ArunaEnterprises.DTO.CalculationDTO;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Attendance;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.AttendanceStatus;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Employee;
+import com.arunaenterprisesbackend.ArunaEnterprises.Entity.ReelStatus;
+import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Reel;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.AttendanceRepository;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.EmployeeRepository;
+import com.arunaenterprisesbackend.ArunaEnterprises.Service.AttendanceService;
+import com.arunaenterprisesbackend.ArunaEnterprises.Service.InventoryService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import com.arunaenterprisesbackend.ArunaEnterprises.Repository.ReelRepository;
 
 @RestController
 @CrossOrigin("*")
@@ -22,9 +30,18 @@ public class PublicController {
     @Autowired
     private AttendanceRepository attendanceRepository;
 
+    @Autowired
+    private ReelRepository reelRepository;
+
+    @Autowired
+    private InventoryService inventoryService;
+
+    @Autowired
+    private AttendanceService attendanceService;
+
     @GetMapping("/greet")
     public String HelloController(){
-        return "HEllo World";
+        return "Hello World";
     }
 
     @PostMapping("/attendance-scan")
@@ -34,34 +51,42 @@ public class PublicController {
     }
 
     @PostMapping("/scan-attendance")
-    public String scanAttendance(@RequestBody Barcode barcodeId){
-        Employee employee = employeeRepository.findByBarcodeId(barcodeId.getBarcodeId());
-
-        LocalDate today = LocalDate.now();
-        Attendance attendance = attendanceRepository.findByEmployeeAndDate(employee, today);
-
-        if (attendance == null) {
-            attendance = new Attendance();
-            attendance.setEmployee(employee);
-            attendance.setDate(today);
-            attendance.setBarcodeId(barcodeId.getBarcodeId());
-            attendance.setCheckInTime(LocalDateTime.now());
-            attendance.setStatus(AttendanceStatus.PRESENT);
-            attendance.setCheckedIn(true);
-
-            attendanceRepository.save(attendance);
-            return "Attendance marked successfully!";
-        }else{
-            if(attendance.isCheckedIn()){
-                attendance.setCheckOutTime(LocalDateTime.now());
-                attendance.setCheckedIn(false);
-                attendanceRepository.save(attendance);
-
-                return "Checkout seccessfully!";
-            }else{
-                return "Already checkout out";
-            }
+    public ResponseEntity<String> scanAttendance(@RequestBody Barcode barcodeId) {
+        try {
+            String response = attendanceService.markAttendance(barcodeId.getBarcodeId());
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Unexpected error: " + e.getMessage());
         }
     }
 
+
+    @PostMapping("/scan-inventory")
+    public ResponseEntity<String> scanInventory(@RequestBody Reel scannedReel) {
+        try {
+            String response = inventoryService.toggleReelStatus(scannedReel.getBarcodeId());
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Unexpected error: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/calculate-usage")
+    public ResponseEntity<String> calculateBoxWeight(@RequestBody CalculationDTO dto) {
+        try {
+            String message = inventoryService.calculateAndReduceWeight(dto);
+            return ResponseEntity.ok(message);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body("❌ " + e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("❌ Unexpected error: " + e.getMessage());
+        }
+    }
 }

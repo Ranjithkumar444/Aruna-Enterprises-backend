@@ -24,6 +24,8 @@ public class Reel {
 
     private Double weight;
 
+    private Double intitalWeight;
+
     @Column(length = 100)
     private String quality;
 
