@@ -1,55 +1,70 @@
 package com.arunaenterprisesbackend.ArunaEnterprises.Entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "reel")
+@Table(name = "reels")
 @Setter
 @Getter
+@NoArgsConstructor
+@AllArgsConstructor
 public class Reel {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "barcode_id", unique = true, length = 50)
+    @Column(name = "barcode_id", unique = true, length = 100)
     private String barcodeId;
 
-    @Column(length = 50)
-    private String size;
-
-    private Double weight;
-
-    private Double intitalWeight;
+    private int size;
+    private int length;
+    private int width;
+    private int height;
+    private int gsm;
 
     @Column(length = 100)
     private String quality;
 
-    @Column(name = "supplier_name", length = 100)
-    private String supplierName;
+    @Column(name = "burst_factor")
+    private int burstFactor;
 
-    @Column(name = "arrival_date")
-    private LocalDate arrivalDate;
+    private int deckle;
+
+    @Column(name = "initial_weight")
+    private int initialWeight;
+
+    @Column(name = "current_weight")
+    private int currentWeight;
+
+    @Column(length = 5)
+    private String unit;
 
     @Enumerated(EnumType.STRING)
-    @Column(length = 50)
+    @Column(length = 20)
     private ReelStatus status;
 
-    @Lob
-    @Column(name = "barcode_image", columnDefinition = "LONGBLOB")
-    private byte[] barcodeImage;
+    @Column(name = "paper_type", length = 100)
+    private String paperType;
+
+    @Column(name = "supplier_name", length = 100)
+    private String supplierName;
 
     @Column(name = "created_by", length = 100)
     private String createdBy;
 
-    @Column(name = "created_at", updatable = false)
+    @Column(name = "created_at")
     private LocalDate createdAt;
 
-    public Reel() {
-        this.createdAt = LocalDate.now();
-    }
+    @Lob
+    @Column(name = "barcode_image")
+    private byte[] barcodeImage;
+
 }
+
