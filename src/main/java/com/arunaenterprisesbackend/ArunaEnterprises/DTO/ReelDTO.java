@@ -10,12 +10,19 @@ import java.time.LocalDate;
 @Getter
 @Setter
 public class ReelDTO {
-    private String size;
-    private Double weight;
-    private Double intitalWeight;
+
+    private int size;
+    private int length;
+    private int width;
+    private int height;
+    private int gsm;
     private String quality;
+    private int burstFactor;
+    private int deckle;
+    private int initialWeight;
+    private String unit;
+    private String paperType;
     private String supplierName;
-    private LocalDate arrivalDate;
-    private String status;
     private String createdBy;
 }
+
