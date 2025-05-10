@@ -106,6 +106,26 @@
 				<version>3.5.1</version>
 			</dependency>
 
+		<dependency>
+			<groupId>jakarta.validation</groupId>
+			<artifactId>jakarta.validation-api</artifactId>
+			<version>2.0.2</version> <!-- Or the latest version -->
+		</dependency>
+
+		<!-- Add Hibernate Validator (the implementation of the validation API) -->
+		<dependency>
+			<groupId>org.hibernate.validator</groupId>
+			<artifactId>hibernate-validator</artifactId>
+			<version>6.2.0.Final</version> <!-- Or the latest version -->
+		</dependency>
+
+		<!-- Optional: If you need a dependency for logging the validation errors -->
+		<dependency>
+			<groupId>org.jboss.logging</groupId>
+			<artifactId>jboss-logging</artifactId>
+			<version>3.4.1.Final</version>
+		</dependency>
+
 
 	</dependencies>
 
