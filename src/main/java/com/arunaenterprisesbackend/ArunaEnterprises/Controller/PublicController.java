@@ -2,22 +2,27 @@ package com.arunaenterprisesbackend.ArunaEnterprises.Controller;
 
 import com.arunaenterprisesbackend.ArunaEnterprises.DTO.Barcode;
 import com.arunaenterprisesbackend.ArunaEnterprises.DTO.ContactDTO;
-import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Employee;
+import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Industry;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.AttendanceRepository;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.EmployeeRepository;
+import com.arunaenterprisesbackend.ArunaEnterprises.Repository.IndustryRepository;
 import com.arunaenterprisesbackend.ArunaEnterprises.Service.AttendanceService;
 import com.arunaenterprisesbackend.ArunaEnterprises.Service.ContactService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 
 @RestController
 @CrossOrigin("*")
 @RequestMapping("/public")
 public class PublicController {
+
+    @Autowired
+    private IndustryRepository industryRepository;
 
     @Autowired
     private EmployeeRepository employeeRepository;
@@ -67,4 +72,17 @@ public class PublicController {
             throw new RuntimeException(e);
         }
     }
+
+    @GetMapping("/getAllIndustry")
+    public ResponseEntity<?> getAllIndustry() {
+        try {
+            List<Industry> industryList = industryRepository.findAll();
+            return ResponseEntity.ok(industryList);
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to fetch industries: " + e.getMessage());
+        }
+    }
+
    }

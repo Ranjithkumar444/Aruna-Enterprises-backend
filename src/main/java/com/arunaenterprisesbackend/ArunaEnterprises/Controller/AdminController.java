@@ -3,15 +3,19 @@ package com.arunaenterprisesbackend.ArunaEnterprises.Controller;
 import com.arunaenterprisesbackend.ArunaEnterprises.Config.SecurityConfig;
 import com.arunaenterprisesbackend.ArunaEnterprises.DTO.AttendanceResponseDTO;
 import com.arunaenterprisesbackend.ArunaEnterprises.DTO.EmployeeRegister;
+import com.arunaenterprisesbackend.ArunaEnterprises.DTO.IndustryDTO;
 import com.arunaenterprisesbackend.ArunaEnterprises.DTO.LoginResponse;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Admin;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Attendance;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Employee;
+import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Industry;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.AdminRepository;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.AttendanceRepository;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.EmployeeRepository;
+import com.arunaenterprisesbackend.ArunaEnterprises.Repository.IndustryRepository;
 import com.arunaenterprisesbackend.ArunaEnterprises.Service.AdminService;
 import com.arunaenterprisesbackend.ArunaEnterprises.Service.EmployeeService;
+import com.arunaenterprisesbackend.ArunaEnterprises.Service.IndustryService;
 import com.arunaenterprisesbackend.ArunaEnterprises.Service.JWTService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -24,7 +28,10 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import javax.validation.Valid;
+import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -53,6 +60,12 @@ public class AdminController {
 
     @Autowired
     private AttendanceRepository attendanceRepository;
+
+    @Autowired
+    private IndustryService industryService;
+
+    @Autowired
+    private IndustryRepository industryRepository;
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@RequestBody Admin admin) {
@@ -161,4 +174,34 @@ public class AdminController {
 
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("/register-industry")
+    public ResponseEntity<String> registerIndustry(@Valid @RequestBody IndustryDTO industryDTO) {
+        try {
+            // Attempt to register the industry
+            String result = industryService.registerIndustry(industryDTO);
+
+            // Check the result
+            if ("Industry registered successfully.".equals(result)) {
+                return ResponseEntity.ok(result);
+            } else {
+                return ResponseEntity.badRequest().body(result);
+            }
+        } catch (Exception e) {
+            // Log the exception for debugging purposes
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to register industry: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/get-industry/{id}")
+    public ResponseEntity<byte[]> getIndustryBarcodeImage(@PathVariable Long id) {
+        Industry employee = industryRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Employee not found"));
+        return ResponseEntity.ok()
+                .contentType(MediaType.IMAGE_PNG)
+                .body(employee.getIndustryImage());
+    }
+
 }
