@@ -204,4 +204,25 @@ public class AdminController {
                 .body(employee.getIndustryImage());
     }
 
+    @PutMapping("/employee/deactivate/{barcodeId}")
+    public ResponseEntity<String> deactivateEmployee(@PathVariable String barcodeId) {
+        try {
+            Employee employee = employeeRepository.findByBarcodeId(barcodeId);
+            if (employee == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("Employee with barcode ID " + barcodeId + " not found");
+            }
+            if (!employee.isActive()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body("Employee is already deactivated");
+            }
+            employee.setActive(false);
+            employeeRepository.save(employee);
+            return ResponseEntity.ok("Employee deactivated successfully");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error deactivating employee: " + e.getMessage());
+        }
+    }
+
 }

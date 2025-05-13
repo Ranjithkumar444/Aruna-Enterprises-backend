@@ -43,4 +43,8 @@ public class Employee {
     @Column(name = "barcode_image", columnDefinition = "LONGBLOB")
     private byte[] barcodeImage;
 
+    @Column(name = "is_active")
+    private boolean isActive = true;
+
+
 }
