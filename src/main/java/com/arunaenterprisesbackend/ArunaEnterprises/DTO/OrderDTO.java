@@ -21,4 +21,5 @@ public class OrderDTO {
     private LocalDateTime updatedAt;
     private LocalDateTime expectedCompletionDate;
     private String createdBy;
+    private String unit;
 }

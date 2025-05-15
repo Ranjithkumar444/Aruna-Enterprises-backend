@@ -30,6 +30,7 @@ public class OrderService {
             order1.setProductType(order.getProductType());
             order1.setMaterialGrade(order.getMaterialGrade());
             order.setUpdatedAt(LocalDateTime.now());
+            order1.setUnit(order.getUnit());
             orderRepository.save(order1);
 
             return "Order Created";
@@ -40,11 +41,24 @@ public class OrderService {
 
     }
 
-    public void updateOrderStatus(Long id, OrderStatus status) {
-        Order order = orderRepository.findById(id).orElseThrow(() -> new RuntimeException("Order not found"));
-        order.setStatus(status);
-        order.setUpdatedAt(LocalDateTime.now());
+    public void updateOrderStatus(Long orderId, OrderStatus newStatus) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        if (order.getStatus() == OrderStatus.COMPLETED && newStatus == OrderStatus.COMPLETED) {
+            if (order.getCompletedAt() == null) {
+                order.setCompletedAt(LocalDateTime.now());
+            }
+        } else if (newStatus == OrderStatus.COMPLETED) {
+            order.setStatus(OrderStatus.COMPLETED);
+            order.setCompletedAt(LocalDateTime.now());
+        } else {
+            order.setStatus(newStatus);
+            order.setCompletedAt(null);
+        }
+
         orderRepository.save(order);
     }
+
 
 }

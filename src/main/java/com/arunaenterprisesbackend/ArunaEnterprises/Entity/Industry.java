@@ -7,6 +7,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Getter
 @Setter
@@ -34,4 +36,26 @@ public class Industry {
     private String state;
 
     private String address;
+
+    @Column(name = "public_id")
+    private String cloudinaryPublicId;
+
+    @Column(name = "image_url")
+    private String imageUrl;
+
+    @Column(name = "image_format")
+    private String imageFormat;
+
+    @Column(name = "image_size")
+    private Integer imageSize;
+
+    @Column(name = "image_width")
+    private Integer imageWidth;
+
+    @Column(name = "image_height")
+    private Integer imageHeight;
+
+    @Column(name = "uploaded_at")
+    private LocalDateTime uploadedAt;
+
 }
