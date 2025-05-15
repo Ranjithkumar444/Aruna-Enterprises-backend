@@ -44,5 +44,10 @@ public class Order {
 
     private String createdBy;
 
+    @Column(name = "completed_at")
+    private LocalDateTime completedAt;
+
+    private String unit;
+
 }
 
