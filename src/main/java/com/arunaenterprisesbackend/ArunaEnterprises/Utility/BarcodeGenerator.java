@@ -11,7 +11,7 @@ public class BarcodeGenerator {
     public static byte[] generateBarcodeImage(String barcodeText) throws Exception {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         BitMatrix matrix = new MultiFormatWriter()
-                .encode(barcodeText, BarcodeFormat.CODE_128, 300, 100);
+                .encode(barcodeText, BarcodeFormat.CODE_128, 406,203 );
         MatrixToImageWriter.writeToStream(matrix, "PNG", baos);
         return baos.toByteArray();
     }
