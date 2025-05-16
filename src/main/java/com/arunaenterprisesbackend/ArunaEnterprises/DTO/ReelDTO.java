@@ -11,12 +11,7 @@ import java.time.LocalDate;
 @Setter
 public class ReelDTO {
 
-    private int size;
-    private int length;
-    private int width;
-    private int height;
     private int gsm;
-    private String quality;
     private int burstFactor;
     private int deckle;
     private int initialWeight;
@@ -24,5 +19,6 @@ public class ReelDTO {
     private String paperType;
     private String supplierName;
     private String createdBy;
+    private String reelSet;
 }
 

@@ -24,14 +24,7 @@ public class Reel {
     @Column(name = "barcode_id", unique = true, length = 100)
     private String barcodeId;
 
-    private int size;
-    private int length;
-    private int width;
-    private int height;
     private int gsm;
-
-    @Column(length = 100)
-    private String quality;
 
     @Column(name = "burst_factor")
     private int burstFactor;
@@ -67,5 +60,6 @@ public class Reel {
     @Column(name = "barcode_image")
     private byte[] barcodeImage;
 
+    private String reelSet;
 }
 
