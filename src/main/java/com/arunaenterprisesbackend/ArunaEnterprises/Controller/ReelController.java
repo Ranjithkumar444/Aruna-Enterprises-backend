@@ -1,6 +1,7 @@
 package com.arunaenterprisesbackend.ArunaEnterprises.Controller;
 
 import com.arunaenterprisesbackend.ArunaEnterprises.DTO.ReelDTO;
+import com.arunaenterprisesbackend.ArunaEnterprises.DTO.ReelDetailsDTO;
 import com.arunaenterprisesbackend.ArunaEnterprises.DTO.ReelRegistrationResponseDTO;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Employee;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Reel;
@@ -49,6 +50,27 @@ public class ReelController {
         }
         return ResponseEntity.notFound().build();
     }
+
+    @GetMapping("barcode/details/{barcodeId}")
+    public ResponseEntity<ReelDetailsDTO> getReelDetails(@PathVariable String barcodeId) {
+        Optional<Reel> optionalReel = Optional.ofNullable(reelRepository.findByBarcodeId(barcodeId));
+
+        if (optionalReel.isPresent()) {
+            Reel reel = optionalReel.get();
+
+            ReelDetailsDTO dto = new ReelDetailsDTO();
+            dto.setBurstFactor(optionalReel.get().getBurstFactor());
+            dto.setGsm(optionalReel.get().getGsm());
+            dto.setDeckle(optionalReel.get().getDeckle());
+            dto.setSupplierName(optionalReel.get().getSupplierName());
+            dto.setCurrentWeight(optionalReel.get().getCurrentWeight());
+
+            return ResponseEntity.ok(dto);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
 
 //    @GetMapping("/reel/barcode-image/{id}")
 //    public ResponseEntity<?> getBarcodeImage(@PathVariable String id) {

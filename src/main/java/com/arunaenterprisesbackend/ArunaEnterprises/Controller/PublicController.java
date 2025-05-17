@@ -4,13 +4,10 @@ import com.arunaenterprisesbackend.ArunaEnterprises.DTO.Barcode;
 import com.arunaenterprisesbackend.ArunaEnterprises.DTO.BarcodeDTO;
 import com.arunaenterprisesbackend.ArunaEnterprises.DTO.CalculationDTO;
 import com.arunaenterprisesbackend.ArunaEnterprises.DTO.ContactDTO;
-import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Industry;
-import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Reel;
-import com.arunaenterprisesbackend.ArunaEnterprises.Entity.ReelStatus;
-import com.arunaenterprisesbackend.ArunaEnterprises.Entity.ReelUsageHistory;
+import com.arunaenterprisesbackend.ArunaEnterprises.Entity.*;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.*;
 import com.arunaenterprisesbackend.ArunaEnterprises.Service.AttendanceService;
-import com.arunaenterprisesbackend.ArunaEnterprises.Service.ContactService;
+import com.arunaenterprisesbackend.ArunaEnterprises.Service.EmailService;
 import com.arunaenterprisesbackend.ArunaEnterprises.Service.WeightCalculation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -19,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 
 @RestController
@@ -39,9 +37,6 @@ public class PublicController {
     private AttendanceService attendanceService;
 
    @Autowired
-   private ContactService contactService;
-
-   @Autowired
    private ReelUsageHistoryRepository reelUsageHistoryRepository;
 
    @Autowired
@@ -49,6 +44,10 @@ public class PublicController {
 
    @Autowired
    private ReelRepository reelRepository;
+
+   @Autowired
+   private ContactRepository contactRepository;
+
 
     @GetMapping("/greet")
     public String HelloController(){
@@ -75,15 +74,21 @@ public class PublicController {
     }
 
     @PostMapping("/contact-details")
-    public ResponseEntity<String> registerContactInfo(@RequestBody ContactDTO contactinfo){
-        try{
-            String response = contactService.registerContactInfo(contactinfo);
-            return ResponseEntity.ok(response);
-        }catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-        catch (Exception e) {
-            throw new RuntimeException(e);
+    public ResponseEntity<String> handleContactForm(@RequestBody ContactDTO request) {
+        try {
+            ContactMessage contactMessage = new ContactMessage();
+
+            contactMessage.setName(request.getName());
+            contactMessage.setPhone(request.getPhone());
+            contactMessage.setMessage(request.getMessage());
+            contactMessage.setCreatedAt(LocalDateTime.now());
+            contactMessage.setMessage(request.getMessage());
+
+            contactRepository.save(contactMessage);
+
+            return ResponseEntity.ok("Thank You for contacting us we will reach you soon");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error in Contacting Us");
         }
     }
 

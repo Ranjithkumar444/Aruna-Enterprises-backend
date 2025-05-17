@@ -47,7 +47,12 @@ public class Order {
     @Column(name = "completed_at")
     private LocalDateTime completedAt;
 
+    @Column(name = "shipped_at")
+    private LocalDateTime shippedAt;
+
     private String unit;
+
+    private String transportNumber;
 
 }
 
