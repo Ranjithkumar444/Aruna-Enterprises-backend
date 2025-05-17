@@ -22,4 +22,5 @@ public class OrderDTO {
     private LocalDateTime expectedCompletionDate;
     private String createdBy;
     private String unit;
+    private String transportNumber;
 }

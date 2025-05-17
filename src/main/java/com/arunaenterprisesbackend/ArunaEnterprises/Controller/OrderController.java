@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @CrossOrigin(origins = "*")
@@ -35,20 +36,24 @@ public class OrderController {
     }
 
     @PutMapping("/order/{id}/status")
-    public ResponseEntity<String> updateOrderStatus(@PathVariable Long id, @RequestParam OrderStatus status) {
+    public ResponseEntity<String> updateOrderStatus(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> payload) {
         try {
-            orderservice.updateOrderStatus(id, status);
+            OrderStatus status = OrderStatus.valueOf(payload.get("status").toString());
+            String transportNumber = payload.containsKey("transportNumber") ?
+                    payload.get("transportNumber").toString() : null;
+
+            orderservice.updateOrderStatus(id, status, transportNumber);
             return ResponseEntity.ok("Order status updated to " + status);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to update status");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to update status: " + e.getMessage());
         }
     }
 
     @GetMapping("/order/getAllOrders")
-    public List<Order> getAllOrders(){
-        List<Order> listOfOrders = orderRepository.findAll();
-        return listOfOrders;
+    public List<Order> getAllOrders() {
+        return orderRepository.findAll();
     }
-
-
 }

@@ -9,6 +9,7 @@ import lombok.*;
 public class ReelRegistrationResponseDTO {
     private String barcodeId;
 
+
     public ReelRegistrationResponseDTO(String barcodeId) {
         this.barcodeId = barcodeId;
     }
