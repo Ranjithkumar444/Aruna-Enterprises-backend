@@ -3,10 +3,8 @@ package com.arunaenterprisesbackend.ArunaEnterprises.Controller;
 import com.arunaenterprisesbackend.ArunaEnterprises.Config.SecurityConfig;
 import com.arunaenterprisesbackend.ArunaEnterprises.DTO.LoginResponse;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Admin;
-import com.arunaenterprisesbackend.ArunaEnterprises.Repository.AdminRepository;
-import com.arunaenterprisesbackend.ArunaEnterprises.Repository.AttendanceRepository;
-import com.arunaenterprisesbackend.ArunaEnterprises.Repository.EmployeeRepository;
-import com.arunaenterprisesbackend.ArunaEnterprises.Repository.IndustryRepository;
+import com.arunaenterprisesbackend.ArunaEnterprises.Entity.ContactMessage;
+import com.arunaenterprisesbackend.ArunaEnterprises.Repository.*;
 import com.arunaenterprisesbackend.ArunaEnterprises.Service.AdminService;
 import com.arunaenterprisesbackend.ArunaEnterprises.Service.EmployeeService;
 import com.arunaenterprisesbackend.ArunaEnterprises.Service.IndustryService;
@@ -16,6 +14,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -38,6 +38,9 @@ public class AdminController {
     private EmployeeRepository employeeRepository;
     @Autowired
     private EmployeeService employeeService;
+
+    @Autowired
+    private ContactRepository contactRepository;
 
     @Autowired
     private AttendanceRepository attendanceRepository;
@@ -88,5 +91,16 @@ public class AdminController {
     public ResponseEntity<List<Admin>> getAllAdmins(){
         List<Admin> admins = adminRepository.findAll();
         return ResponseEntity.ok(admins);
+    }
+
+    @GetMapping("/contact/contactDetails")
+    public ResponseEntity<List<ContactMessage>> getContactRequest(){
+        try{
+            LocalDateTime cutoff = LocalDateTime.now().minusHours(48);
+            List<ContactMessage> recentMessages = contactRepository.findMessagesFromLast48Hours(cutoff);
+            return ResponseEntity.ok(recentMessages);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(null);
+        }
     }
 }

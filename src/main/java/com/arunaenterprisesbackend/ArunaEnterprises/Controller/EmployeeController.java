@@ -34,13 +34,13 @@ public class EmployeeController {
     }
 
     @PostMapping("/register-employee")
-    public ResponseEntity<String> registerEmployee(@RequestBody EmployeeRegister employeeRegister) {
+    public ResponseEntity<Long> registerEmployee(@RequestBody EmployeeRegister employeeRegister) {
         try {
-            String response = employeeService.registerEmployee(employeeRegister);
+            Long response = employeeService.registerEmployee(employeeRegister);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to register employee: " + e.getMessage());
+                    .body(null  );
         }
     }
 

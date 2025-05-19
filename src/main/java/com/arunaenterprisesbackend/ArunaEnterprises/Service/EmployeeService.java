@@ -10,7 +10,6 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Random;
-import java.util.UUID;
 
 @Service
 public class EmployeeService {
@@ -18,7 +17,7 @@ public class EmployeeService {
     @Autowired
     private EmployeeRepository employeeRepository;
 
-    public String registerEmployee(EmployeeRegister employeeRegister) throws Exception {
+    public long registerEmployee(EmployeeRegister employeeRegister) throws Exception {
         if (employeeRepository.existsByEmail(employeeRegister.getEmail())) {
             throw new RuntimeException("Email already registered");
         }
@@ -47,7 +46,7 @@ public class EmployeeService {
 
         employeeRepository.save(employee);
 
-        return "Employee registered with Barcode ID: " + barcodeID;
+        return employee.getId();
     }
 
     public String generateBarcodeId() {

@@ -45,6 +45,4 @@ public class Employee {
 
     @Column(name = "is_active")
     private boolean isActive = true;
-
-
 }

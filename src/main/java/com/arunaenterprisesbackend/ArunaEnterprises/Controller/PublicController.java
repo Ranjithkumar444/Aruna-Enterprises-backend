@@ -7,7 +7,6 @@ import com.arunaenterprisesbackend.ArunaEnterprises.DTO.ContactDTO;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.*;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.*;
 import com.arunaenterprisesbackend.ArunaEnterprises.Service.AttendanceService;
-import com.arunaenterprisesbackend.ArunaEnterprises.Service.EmailService;
 import com.arunaenterprisesbackend.ArunaEnterprises.Service.WeightCalculation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -16,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
+
 
 
 @RestController
@@ -47,7 +46,6 @@ public class PublicController {
 
    @Autowired
    private ContactRepository contactRepository;
-
 
     @GetMapping("/greet")
     public String HelloController(){
