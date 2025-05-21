@@ -1,14 +1,22 @@
 package com.arunaenterprisesbackend.ArunaEnterprises.Service;
 
 import com.arunaenterprisesbackend.ArunaEnterprises.DTO.SalaryRequestDTO;
+import com.arunaenterprisesbackend.ArunaEnterprises.DTO.SalaryResponseDTO;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Employee;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Salary;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.EmployeeRepository;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.SalaryRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.GetMapping;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class SalaryService {
@@ -63,5 +71,30 @@ public class SalaryService {
 
         return "Salary details saved for employee ID: " + employee.getId();
     }
+
+    public List<SalaryResponseDTO> getCurrentMonthSalaryForAllEmployees() {
+        YearMonth currentMonth = YearMonth.now();
+        int month = currentMonth.getMonthValue();
+        int year = currentMonth.getYear();
+
+        List<Salary> salaries = salaryRepository.findAllByMonthAndYear(month, year);
+
+        // Only one entry per employee
+        Map<Long, Salary> uniqueEmployeeSalary = new HashMap<>();
+        for (Salary s : salaries) {
+            uniqueEmployeeSalary.putIfAbsent(s.getEmployee().getId(), s);
+        }
+
+        return uniqueEmployeeSalary.values()
+                .stream()
+                .map(SalaryResponseDTO::new)
+                .collect(Collectors.toList());
+    }
+
+
+    public List<Salary> getLatestSalariesForAllEmployees() {
+        return salaryRepository.findLatestSalaryPerEmployee();
+    }
+
 }
 
