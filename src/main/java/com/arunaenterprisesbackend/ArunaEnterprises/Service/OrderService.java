@@ -56,7 +56,6 @@ public class OrderService {
             order.setShippedAt(LocalDateTime.now());
             order.setTransportNumber(transportNumber);
         } else {
-            // For other statuses, clear completion and shipping timestamps
             order.setCompletedAt(null);
             order.setShippedAt(null);
             order.setTransportNumber(null);
@@ -65,8 +64,7 @@ public class OrderService {
         orderRepository.save(order);
     }
 
-    // Optional: Add a method to clean up shipped orders older than 24 hours
-    @Scheduled(cron = "0 0 * * * *") // Runs every hour at minute 0
+    @Scheduled(cron = "0 0 * * * *")
     public void cleanupOldShippedOrders() {
         LocalDateTime cutoff = LocalDateTime.now().minusHours(24);
         List<Order> oldShippedOrders = orderRepository.findByStatusAndShippedAtBefore(

@@ -9,7 +9,6 @@ import lombok.*;
 @AllArgsConstructor
 public class IndustryDTO {
     private String industryName;
-    private String industryImage;
     private String city;
     private String sector;
     private String state;

@@ -130,7 +130,6 @@ public class PublicController {
         }
     }
 
-
     @PostMapping("/inventory/reelWeightCalculation")
     public ResponseEntity<String> calculateWeight(@RequestBody CalculationDTO calculationDTO) {
         try {
@@ -144,7 +143,7 @@ public class PublicController {
                 return ResponseEntity.badRequest().body("The reel is not set to use before");
             }
 
-            String reelSet = reel.getReelSet(); // "flute" or "liner"
+            String reelSet = reel.getReelSet();
 
             double usedWeightGrams;
 
@@ -154,6 +153,10 @@ public class PublicController {
 
             int currentWeight = (int) (reel.getCurrentWeight() - usedWeightKg);
             reel.setCurrentWeight(currentWeight);
+            if(currentWeight <= 10){
+                reel.setStatus(ReelStatus.USE_COMPLETED);
+            }
+            reel.setStatus(ReelStatus.NOT_IN_USE);
             reelRepository.save(reel);
 
             return ResponseEntity.ok("Used Weight = " + usedWeightKg + " kg, Current Reel Weight = " + currentWeight + " kg");

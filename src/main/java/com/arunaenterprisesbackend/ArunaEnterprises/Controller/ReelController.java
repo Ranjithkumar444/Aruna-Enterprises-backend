@@ -34,7 +34,7 @@ public class ReelController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(null); // or return ResponseEntity.internalServerError().build();
+                    .body(null);
         }
     }
 
@@ -71,19 +71,18 @@ public class ReelController {
         }
     }
 
+    @GetMapping("/reel/barcode-image/{id}")
+    public ResponseEntity<?> getBarcodeimage(@PathVariable String id) {
+        Reel reel = reelRepository.findByBarcodeId(id);
 
-//    @GetMapping("/reel/barcode-image/{id}")
-//    public ResponseEntity<?> getBarcodeImage(@PathVariable String id) {
-//        Reel reel = reelRepository.findByBarcodeId(id);
-//
-//        if (reel == null) {
-//            return ResponseEntity
-//                    .status(HttpStatus.NOT_FOUND)
-//                    .body("Reel with barcode ID '" + id + "' not found");
-//        }
-//
-//        return ResponseEntity.ok()
-//                .contentType(MediaType.IMAGE_PNG)
-//                .body(reel.getBarcodeImage());
-//    }
+        if (reel == null) {
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body("Reel with barcode ID '" + id + "' not found");
+        }
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.IMAGE_PNG)
+                .body(reel.getBarcodeImage());
+    }
 }
