@@ -23,7 +23,7 @@ public class Order {
     @Column(nullable = false)
     private String client;
 
-    private String productType; // number of Plies in the box
+    private String productType;
 
     private int quantity;
 

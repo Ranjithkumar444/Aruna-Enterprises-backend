@@ -27,29 +27,18 @@ public class IndustryController {
     @PostMapping("/register-industry")
     public ResponseEntity<String> registerIndustry(@Valid @RequestBody IndustryDTO industryDTO) {
         try {
-            // Attempt to register the industry
             String result = industryService.registerIndustry(industryDTO);
 
-            // Check the result
             if ("Industry registered successfully.".equals(result)) {
                 return ResponseEntity.ok(result);
             } else {
                 return ResponseEntity.badRequest().body(result);
             }
         } catch (Exception e) {
-            // Log the exception for debugging purposes
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Failed to register industry: " + e.getMessage());
         }
     }
 
-    @GetMapping("/get-industry/{id}")
-    public ResponseEntity<byte[]> getIndustryBarcodeImage(@PathVariable Long id) {
-        Industry employee = industryRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Employee not found"));
-        return ResponseEntity.ok()
-                .contentType(MediaType.IMAGE_PNG)
-                .body(employee.getIndustryImage());
-    }
 }

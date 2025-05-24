@@ -24,10 +24,6 @@ public class Industry {
     @Column(name = "industry_name",nullable = false , unique = true)
     private String industryName;
 
-    @Lob
-    @Column(name = "industry_image", columnDefinition = "LONGBLOB")
-    private byte[] industryImage;
-
     @Column(nullable = false)
     private String sector;
 
@@ -36,24 +32,6 @@ public class Industry {
     private String state;
 
     private String address;
-
-    @Column(name = "public_id")
-    private String cloudinaryPublicId;
-
-    @Column(name = "image_url")
-    private String imageUrl;
-
-    @Column(name = "image_format")
-    private String imageFormat;
-
-    @Column(name = "image_size")
-    private Integer imageSize;
-
-    @Column(name = "image_width")
-    private Integer imageWidth;
-
-    @Column(name = "image_height")
-    private Integer imageHeight;
 
     @Column(name = "uploaded_at")
     private LocalDateTime uploadedAt;
