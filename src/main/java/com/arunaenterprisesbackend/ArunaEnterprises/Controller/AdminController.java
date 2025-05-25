@@ -1,8 +1,10 @@
 package com.arunaenterprisesbackend.ArunaEnterprises.Controller;
 
 import com.arunaenterprisesbackend.ArunaEnterprises.Config.SecurityConfig;
+import com.arunaenterprisesbackend.ArunaEnterprises.DTO.BoxDTO;
 import com.arunaenterprisesbackend.ArunaEnterprises.DTO.LoginResponse;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Admin;
+import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Box;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.ContactMessage;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.*;
 import com.arunaenterprisesbackend.ArunaEnterprises.Service.AdminService;
@@ -16,6 +18,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -47,6 +50,9 @@ public class AdminController {
 
     @Autowired
     private IndustryService industryService;
+
+    @Autowired
+    private BoxRepository boxRepository;
 
     @Autowired
     private IndustryRepository industryRepository;
@@ -101,6 +107,34 @@ public class AdminController {
             return ResponseEntity.ok(recentMessages);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(null);
+        }
+    }
+
+    @PostMapping("/box/create-box")
+    public ResponseEntity<String> createBox(@RequestBody BoxDTO boxDTO){
+        try{
+            Box box = new Box();
+            box.setBox(boxDTO.getBox());
+            box.setBoxType(boxDTO.getBoxType());
+            box.setBoxUrl(boxDTO.getBoxUrl());
+            box.setBoxDescription(boxDTO.getBoxDescription());
+            boxRepository.save(box);
+            return ResponseEntity.ok("The box details registered successfully");
+        }
+        catch (Exception e){
+            return ResponseEntity.badRequest().body("Failed to register box details");
+        }
+    }
+
+    @GetMapping("/box/getAllBoxDetails")
+    public ResponseEntity<List<Box>> getAllDetilsOfBox(){
+        try{
+            List<Box> list = boxRepository.findAll();
+            return ResponseEntity.ok(list);
+        }
+        catch (Exception e){
+            List<Box> list = new ArrayList<>();
+            return ResponseEntity.badRequest().body(list);
         }
     }
 }
