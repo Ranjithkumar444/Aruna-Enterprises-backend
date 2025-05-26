@@ -36,4 +36,5 @@ public class Industry {
     @Column(name = "uploaded_at")
     private LocalDateTime uploadedAt;
 
+    private String url;
 }
