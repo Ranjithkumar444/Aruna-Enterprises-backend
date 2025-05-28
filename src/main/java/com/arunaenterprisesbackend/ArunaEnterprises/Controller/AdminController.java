@@ -126,15 +126,5 @@ public class AdminController {
         }
     }
 
-    @GetMapping("/box/getAllBoxDetails")
-    public ResponseEntity<List<Box>> getAllDetilsOfBox(){
-        try{
-            List<Box> list = boxRepository.findAll();
-            return ResponseEntity.ok(list);
-        }
-        catch (Exception e){
-            List<Box> list = new ArrayList<>();
-            return ResponseEntity.badRequest().body(list);
-        }
-    }
+
 }
