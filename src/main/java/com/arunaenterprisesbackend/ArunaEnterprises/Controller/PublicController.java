@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -46,6 +47,12 @@ public class PublicController {
 
    @Autowired
    private ContactRepository contactRepository;
+
+   @Autowired
+   private BoxRepository boxRepository;
+
+   @Autowired
+   private BoxDetailsRepository boxDetailsRepository;
 
     @GetMapping("/greet")
     public String HelloController(){
@@ -163,6 +170,29 @@ public class PublicController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("An error occurred: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/box/getAllBoxDetails")
+    public ResponseEntity<List<Box>> getAllDetilsOfBox(){
+        try{
+            List<Box> list = boxRepository.findAll();
+            return ResponseEntity.ok(list);
+        }
+        catch (Exception e){
+            List<Box> list = new ArrayList<>();
+            return ResponseEntity.badRequest().body(list);
+        }
+    }
+
+    @GetMapping("/box/getBoxDetails")
+    public ResponseEntity<List<BoxDetails>> getAllBoxDetails(){
+        try{
+            List<BoxDetails> list = boxDetailsRepository.findAll();
+            return ResponseEntity.ok(list);
+        } catch(Exception e) {
+            List<BoxDetails> list = null;
+            return ResponseEntity.badRequest().body(list);
         }
     }
 
