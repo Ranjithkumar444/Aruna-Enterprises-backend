@@ -141,6 +141,7 @@ public class PublicController {
     public ResponseEntity<String> calculateWeight(@RequestBody CalculationDTO calculationDTO) {
         try {
             Reel reel = reelRepository.findByBarcodeId(calculationDTO.getBarcodeId());
+            ReelUsageHistory reelUsageHistory = new ReelUsageHistory();
 
             if (reel == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Reel not found for barcode ID");
@@ -163,7 +164,21 @@ public class PublicController {
             if(currentWeight <= 10){
                 reel.setStatus(ReelStatus.USE_COMPLETED);
             }
-            reel.setStatus(ReelStatus.NOT_IN_USE);
+            else{
+                reel.setStatus(ReelStatus.NOT_IN_USE);
+            }
+
+            reelUsageHistory.setBarcodeId(calculationDTO.getBarcodeId());
+            reelUsageHistory.setReelSet(reel.getReelSet());
+            reelUsageHistory.setUsedWeight(usedWeightKg);
+            reelUsageHistory.setUsedAt(LocalDateTime.now());
+            reelUsageHistory.setBoxDetails(
+                    String.valueOf(calculationDTO.getLength() + " " + calculationDTO.getWidth() + " " + calculationDTO.getHeight())
+            );
+            reelUsageHistory.setUsedBy(calculationDTO.getScannedBy());
+
+            reelUsageHistoryRepository.save(reelUsageHistory);
+
             reelRepository.save(reel);
 
             return ResponseEntity.ok("Used Weight = " + usedWeightKg + " kg, Current Reel Weight = " + currentWeight + " kg");
