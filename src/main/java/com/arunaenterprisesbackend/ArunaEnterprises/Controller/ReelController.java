@@ -5,6 +5,7 @@ import com.arunaenterprisesbackend.ArunaEnterprises.DTO.ReelDetailsDTO;
 import com.arunaenterprisesbackend.ArunaEnterprises.DTO.ReelRegistrationResponseDTO;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Employee;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Reel;
+import com.arunaenterprisesbackend.ArunaEnterprises.Entity.ReelStatus;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.ReelRepository;
 import com.arunaenterprisesbackend.ArunaEnterprises.Service.ReelService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +15,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 @CrossOrigin("*")
@@ -85,4 +88,12 @@ public class ReelController {
                 .contentType(MediaType.IMAGE_PNG)
                 .body(reel.getBarcodeImage());
     }
+
+    @GetMapping("/inventory/getReelStocks")
+    public ResponseEntity<List<Reel>> getReelStocks() {
+        List<ReelStatus> statuses = Arrays.asList(ReelStatus.IN_USE, ReelStatus.NOT_IN_USE);
+        List<Reel> reels = reelRepository.findByStatusIn(statuses);
+        return ResponseEntity.ok(reels);
+    }
+
 }
