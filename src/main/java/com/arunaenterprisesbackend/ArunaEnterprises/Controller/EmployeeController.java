@@ -33,14 +33,26 @@ public class EmployeeController {
                 .body(employee.getBarcodeImage());
     }
 
+    @GetMapping("/employee/barcode-image/{barcodeId}")
+    public ResponseEntity<byte[]> getBarcodeImageByBarcodeId(@PathVariable String id) {
+        Employee employee = employeeRepository.findByBarcodeId(id);
+        if(employee == null){
+            return ResponseEntity.badRequest().body(null);
+        }
+        return ResponseEntity.ok()
+                .contentType(MediaType.IMAGE_PNG)
+                .body(employee.getBarcodeImage());
+    }
+
     @PostMapping("/register-employee")
     public ResponseEntity<Long> registerEmployee(@RequestBody EmployeeRegister employeeRegister) {
         try {
             Long response = employeeService.registerEmployee(employeeRegister);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(null  );
+                    .body(null);
         }
     }
 

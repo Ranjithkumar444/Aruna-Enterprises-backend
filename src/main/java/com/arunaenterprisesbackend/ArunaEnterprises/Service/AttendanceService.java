@@ -80,17 +80,24 @@ public class AttendanceService {
             double regularHours = workingDays == 26 ? 12 : 8;
             double halfDayThreshold = workingDays == 26 ? 6.5 : 4.5;
 
+
+
             double daySalary = 0.0;
             double otHours = 0.0;
 
             if (totalWorkedHours < halfDayThreshold) {
-                // Half day salary
                 daySalary = totalWorkedHours * oneHourSalary;
             } else if (totalWorkedHours > regularHours) {
                 otHours = totalWorkedHours - regularHours;
                 daySalary = (regularHours * oneHourSalary) + (otHours * otPerHour);
+                if (totalWorkedHours >= halfDayThreshold) {
+                    salary.setDaysWorked(salary.getDaysWorked() + 1);
+                }
             } else {
                 daySalary = regularHours * oneHourSalary;
+                if (totalWorkedHours >= halfDayThreshold) {
+                    salary.setDaysWorked(salary.getDaysWorked() + 1);
+                }
             }
 
             double newMonthlySalary = salary.getTotalSalaryThisMonth() + daySalary;
