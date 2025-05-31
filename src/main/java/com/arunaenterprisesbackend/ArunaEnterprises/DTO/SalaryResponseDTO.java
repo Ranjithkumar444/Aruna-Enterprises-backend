@@ -17,6 +17,7 @@ public class SalaryResponseDTO {
     private double totalOvertimeHours;
     private int month;
     private int year;
+    private int daysWorked;
 
     public SalaryResponseDTO(Salary salary) {
     }

@@ -41,5 +41,7 @@ public class Salary {
     private double oneDaySalary;
 
     private double oneHourSalary;
+
+    private int daysWorked;
 }
 
