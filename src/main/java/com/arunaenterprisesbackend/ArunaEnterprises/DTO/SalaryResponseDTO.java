@@ -17,9 +17,18 @@ public class SalaryResponseDTO {
     private double totalOvertimeHours;
     private int month;
     private int year;
-    private int daysWorked;
+    private String unit;
+    private double monthlyBaseSalary;
 
     public SalaryResponseDTO(Salary salary) {
+        this.employeeId = salary.getEmployee().getId();
+        this.name = salary.getEmployee().getName();
+        this.barcodeId = salary.getEmployee().getBarcodeId();
+        this.totalSalaryThisMonth = salary.getTotalSalaryThisMonth();
+        this.totalOvertimeHours = salary.getTotalOvertimeHours();
+        this.month = salary.getMonth();
+        this.year = salary.getYear();
+        this.unit = salary.getEmployee().getUnit();
+        this.monthlyBaseSalary = salary.getMonthlyBaseSalary();
     }
 }
-
