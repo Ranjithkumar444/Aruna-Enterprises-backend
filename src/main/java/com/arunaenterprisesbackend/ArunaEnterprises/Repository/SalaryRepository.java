@@ -29,5 +29,12 @@ public interface SalaryRepository extends JpaRepository<Salary, Long> {
     """, nativeQuery = true)
     List<Salary> findLatestSalaryPerEmployee();
 
-}
+    @Query("SELECT s FROM Salary s WHERE s.employee = :employee ORDER BY s.year DESC, s.month DESC")
+    List<Salary> findByEmployeeOrderByYearDescMonthDesc(@Param("employee") Employee employee);
 
+    @Query("SELECT s FROM Salary s WHERE s.employee = :employee ORDER BY s.year DESC, s.month DESC LIMIT 1")
+    Salary findTopByEmployeeOrderByYearDescMonthDesc(@Param("employee") Employee employee);
+
+    @Query("SELECT s FROM Salary s WHERE s.employee.id = :employeeId ORDER BY s.year DESC, s.month DESC LIMIT 1")
+    Salary findLatestByEmployeeId(@Param("employeeId") Long employeeId);
+}
