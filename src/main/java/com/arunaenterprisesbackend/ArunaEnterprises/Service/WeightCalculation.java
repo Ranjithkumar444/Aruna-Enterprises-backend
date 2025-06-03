@@ -25,8 +25,11 @@ public class WeightCalculation {
         } else if (LinerOrFlute.equalsIgnoreCase("liner")) {
             int linerLayers = (ply / 2);
             weightPerBox = areaInM2 * gsm * linerLayers;
-        }else{
+        }else if(LinerOrFlute.equalsIgnoreCase("cutting")){
             weightPerBox = areaInM2 * gsm;
+        }else{
+            int fluteLayers = ply/2;
+            weightPerBox = areaInM2 * gsm * 1.75 * fluteLayers;
         }
 
         double totalWeight = weightPerBox * numberOfBoxes;
