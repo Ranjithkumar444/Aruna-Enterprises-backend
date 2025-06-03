@@ -12,4 +12,5 @@ public class ContactDTO {
     String email;
     String phone;
     String message;
+    boolean replyStatus;
 }

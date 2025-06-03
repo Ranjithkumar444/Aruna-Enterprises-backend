@@ -59,12 +59,6 @@ public class PublicController {
         return "Hello World";
     }
 
-    @PostMapping("/attendance-scan")
-    public String attendanceScan(@RequestBody  Barcode barcodeId){
-        System.out.println(barcodeId.getBarcodeId());
-        return barcodeId.getBarcodeId();
-    }
-
     @PostMapping("/scan-attendance")
     public ResponseEntity<String> scanAttendance(@RequestBody Barcode barcodeId) {
         try {
@@ -78,6 +72,14 @@ public class PublicController {
         }
     }
 
+    @PostMapping("/attendance-scan")
+    public String attendanceScan(@RequestBody  Barcode barcodeId){
+        System.out.println(barcodeId.getBarcodeId());
+        return barcodeId.getBarcodeId();
+    }
+
+
+
     @PostMapping("/contact-details")
     public ResponseEntity<String> handleContactForm(@RequestBody ContactDTO request) {
         try {
@@ -88,6 +90,7 @@ public class PublicController {
             contactMessage.setMessage(request.getMessage());
             contactMessage.setCreatedAt(LocalDateTime.now());
             contactMessage.setMessage(request.getMessage());
+            contactMessage.setReplyStatus(false);
 
             contactRepository.save(contactMessage);
 

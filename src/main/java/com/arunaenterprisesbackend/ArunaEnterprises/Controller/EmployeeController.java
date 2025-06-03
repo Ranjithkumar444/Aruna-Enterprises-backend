@@ -1,6 +1,7 @@
 package com.arunaenterprisesbackend.ArunaEnterprises.Controller;
 
 import com.arunaenterprisesbackend.ArunaEnterprises.DTO.EmployeeRegister;
+import com.arunaenterprisesbackend.ArunaEnterprises.DTO.EmployeeRegisterResponse;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Employee;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.EmployeeRepository;
 import com.arunaenterprisesbackend.ArunaEnterprises.Service.EmployeeService;
@@ -10,7 +11,10 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/admin")
@@ -33,28 +37,70 @@ public class EmployeeController {
                 .body(employee.getBarcodeImage());
     }
 
-    @GetMapping("/employee/barcode-image/{barcodeId}")
-    public ResponseEntity<byte[]> getBarcodeImageByBarcodeId(@PathVariable String id) {
-        Employee employee = employeeRepository.findByBarcodeId(id);
-        if(employee == null){
-            return ResponseEntity.badRequest().body(null);
+    @GetMapping("/employee/barcode/{barcodeId}")
+    public ResponseEntity<byte[]> getBarcodeImageByBarcodeId(@PathVariable String barcodeId) {
+        try {
+            Employee employee = employeeRepository.findByBarcodeId(barcodeId);
+            if (employee == null || employee.getBarcodeImage() == null) {
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.ok()
+                    .contentType(MediaType.IMAGE_PNG)
+                    .body(employee.getBarcodeImage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-        return ResponseEntity.ok()
-                .contentType(MediaType.IMAGE_PNG)
-                .body(employee.getBarcodeImage());
     }
 
-    @PostMapping("/register-employee")
-    public ResponseEntity<Long> registerEmployee(@RequestBody EmployeeRegister employeeRegister) {
+    @GetMapping("/employee/barcode-info/{barcodeId}")
+    public ResponseEntity<Map<String, Object>> getBarcodeInfo(@PathVariable String barcodeId) {
         try {
-            Long response = employeeService.registerEmployee(employeeRegister);
+            Employee employee = employeeRepository.findByBarcodeId(barcodeId);
+            if (employee == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("barcodeId", employee.getBarcodeId());
+            response.put("barcodeImage", Base64.getEncoder().encodeToString(employee.getBarcodeImage()));
+            response.put("employeeName", employee.getName());
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+//    @GetMapping("/employee/barcode-image/{barcodeId}")
+//    public ResponseEntity<byte[]> getBarcodeImageByBarcodeId(@PathVariable String id) {
+//        Employee employee = employeeRepository.findByBarcodeId(id);
+//        if(employee == null){
+//            return ResponseEntity.badRequest().body(null);
+//        }
+//        return ResponseEntity.ok()
+//                .contentType(MediaType.IMAGE_PNG)
+//                .body(employee.getBarcodeImage());
+//    }
+
+    @PostMapping("/register-employee")
+    public ResponseEntity<EmployeeRegisterResponse> registerEmployee(@RequestBody EmployeeRegister employeeRegister) {
+        try {
+            Employee employee = employeeService.registerEmployee(employeeRegister);
+            EmployeeRegisterResponse response = new EmployeeRegisterResponse();
+            response.setEmployeeId(employee.getId());
+            response.setBarcodeId(employee.getBarcodeId());
+
+            // Convert image to Base64
+            String base64Image = Base64.getEncoder().encodeToString(employee.getBarcodeImage());
+            response.setBarcodeImageBase64(base64Image);
+
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(null);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
+
 
     @GetMapping("/get-employees")
     public ResponseEntity<List<Employee>> getAllEmployees(){

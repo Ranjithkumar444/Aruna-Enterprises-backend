@@ -91,12 +91,10 @@ public class AttendanceService {
                 otHours = totalWorkedHours - regularHours;
                 daySalary = (regularHours * oneHourSalary) + (otHours * otPerHour);
                 if (totalWorkedHours >= halfDayThreshold) {
-                    salary.setDaysWorked(salary.getDaysWorked() + 1);
                 }
             } else {
                 daySalary = regularHours * oneHourSalary;
                 if (totalWorkedHours >= halfDayThreshold) {
-                    salary.setDaysWorked(salary.getDaysWorked() + 1);
                 }
             }
 
