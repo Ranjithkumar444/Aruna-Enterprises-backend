@@ -29,4 +29,6 @@ public class ContactMessage {
     @CreationTimestamp
     private LocalDateTime createdAt;
 
+    private boolean replyStatus;
+
 }

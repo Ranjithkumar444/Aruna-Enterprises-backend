@@ -17,7 +17,7 @@ public class EmployeeService {
     @Autowired
     private EmployeeRepository employeeRepository;
 
-    public long registerEmployee(EmployeeRegister employeeRegister) throws Exception {
+    public Employee registerEmployee(EmployeeRegister employeeRegister) throws Exception {
         if (employeeRepository.existsByEmail(employeeRegister.getEmail())) {
             throw new RuntimeException("Email already registered");
         }
@@ -46,7 +46,7 @@ public class EmployeeService {
 
         employeeRepository.save(employee);
 
-        return employee.getId();
+        return employee;
     }
 
     public String generateBarcodeId() {

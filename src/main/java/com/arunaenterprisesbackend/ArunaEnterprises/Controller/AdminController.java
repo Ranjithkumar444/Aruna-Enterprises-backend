@@ -6,6 +6,7 @@ import com.arunaenterprisesbackend.ArunaEnterprises.DTO.LoginResponse;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Admin;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Box;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.ContactMessage;
+import com.arunaenterprisesbackend.ArunaEnterprises.Entity.UpdateReplyStatusRequest;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.*;
 import com.arunaenterprisesbackend.ArunaEnterprises.Service.AdminService;
 import com.arunaenterprisesbackend.ArunaEnterprises.Service.EmployeeService;
@@ -102,12 +103,22 @@ public class AdminController {
     @GetMapping("/contact/contactDetails")
     public ResponseEntity<List<ContactMessage>> getContactRequest(){
         try{
-            LocalDateTime cutoff = LocalDateTime.now().minusHours(48);
+            LocalDateTime cutoff = LocalDateTime.now().minusHours(168);
             List<ContactMessage> recentMessages = contactRepository.findMessagesFromLast48Hours(cutoff);
             return ResponseEntity.ok(recentMessages);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(null);
         }
+    }
+
+    @PutMapping("/contact/updateReplyStatus/{id}")
+    public ResponseEntity<?> updateReplyStatus(
+            @PathVariable Long id,
+            @RequestBody UpdateReplyStatusRequest request) {
+
+
+            ContactMessage updatedContact = adminService.updateReplyStatus(id, request.isReplyStatus());
+            return ResponseEntity.ok(updatedContact);
     }
 
     @PostMapping("/box/create-box")
