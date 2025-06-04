@@ -16,6 +16,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Optional;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 
 @Service
 public class AttendanceService {
@@ -29,85 +31,84 @@ public class AttendanceService {
     @Autowired
     private SalaryRepository salaryRepository;
 
-    @Transactional
-    public String markAttendance(String barcodeId) {
-        if (barcodeId == null || barcodeId.isEmpty()) {
-            throw new IllegalArgumentException("Invalid barcode ID");
-        }
-
-        Employee employee = employeeRepository.findByBarcodeId(barcodeId);
-        if (employee == null) {
-            throw new IllegalArgumentException("No employee found with barcode ID: " + barcodeId);
-        }
-
-        LocalDate today = LocalDate.now();
-        Attendance attendance = attendanceRepository.findByEmployeeAndDate(employee, today);
-
-        if (attendance == null) {
-            attendance = new Attendance();
-            attendance.setEmployee(employee);
-            attendance.setDate(today);
-            attendance.setBarcodeId(barcodeId);
-            attendance.setCheckInTime(LocalDateTime.now());
-            attendance.setStatus(AttendanceStatus.PRESENT);
-            attendance.setCheckedIn(true);
-
-            attendanceRepository.save(attendance);
-            return "Checked in successfully!";
-        } else {
-            if (!attendance.isCheckedIn()) {
-                return "Already checked out.";
-            }
-
-            attendance.setCheckOutTime(LocalDateTime.now());
-            attendance.setCheckedIn(false);
-            attendanceRepository.save(attendance);
-
-            Duration duration = Duration.between(attendance.getCheckInTime(), attendance.getCheckOutTime());
-            double totalWorkedHours = duration.toMinutes() / 60.0;
-
-            Salary salary = salaryRepository.findByEmployeeAndMonthAndYear(
-                    employee, today.getMonthValue(), today.getYear()
-            );
-            if (salary == null) {
-                return "Salary configuration missing for employee.";
-            }
-
-            int workingDays = salary.getWorkingDays();
-            double oneHourSalary = salary.getOneHourSalary();
-            double otPerHour = salary.getOtPerHour();
-
-            double regularHours = workingDays == 26 ? 12 : 8;
-            double halfDayThreshold = workingDays == 26 ? 6.5 : 4.5;
-
-
-
-            double daySalary = 0.0;
-            double otHours = 0.0;
-
-            if (totalWorkedHours < halfDayThreshold) {
-                daySalary = totalWorkedHours * oneHourSalary;
-            } else if (totalWorkedHours > regularHours) {
-                otHours = totalWorkedHours - regularHours;
-                daySalary = (regularHours * oneHourSalary) + (otHours * otPerHour);
-                if (totalWorkedHours >= halfDayThreshold) {
-                }
-            } else {
-                daySalary = regularHours * oneHourSalary;
-                if (totalWorkedHours >= halfDayThreshold) {
-                }
-            }
-
-            double newMonthlySalary = salary.getTotalSalaryThisMonth() + daySalary;
-            double newOtHours = salary.getTotalOvertimeHours() + otHours;
-
-            salary.setTotalSalaryThisMonth(newMonthlySalary);
-            salary.setTotalOvertimeHours(newOtHours);
-
-            salaryRepository.save(salary);
-
-            return String.format("Checked out successfully! Worked %.2f hrs. Earned ₹%.2f today. OT: %.2f hrs", totalWorkedHours, daySalary, otHours);
-        }
+   @Transactional
+public String markAttendance(String barcodeId) {
+    if (barcodeId == null || barcodeId.isEmpty()) {
+        throw new IllegalArgumentException("Invalid barcode ID");
     }
 
+    Employee employee = employeeRepository.findByBarcodeId(barcodeId);
+    if (employee == null) {
+        throw new IllegalArgumentException("No employee found with barcode ID: " + barcodeId);
+    }
+
+    ZoneId istZone = ZoneId.of("Asia/Kolkata");
+    LocalDate today = LocalDate.now(istZone);
+    LocalDateTime nowIST = ZonedDateTime.now(istZone).toLocalDateTime();
+
+    Attendance attendance = attendanceRepository.findByEmployeeAndDate(employee, today);
+
+    if (attendance == null) {
+        attendance = new Attendance();
+        attendance.setEmployee(employee);
+        attendance.setDate(today);
+        attendance.setBarcodeId(barcodeId);
+        attendance.setCheckInTime(nowIST);
+        attendance.setStatus(AttendanceStatus.PRESENT);
+        attendance.setCheckedIn(true);
+
+        attendanceRepository.save(attendance);
+        return "Checked in successfully!";
+    } else {
+        if (!attendance.isCheckedIn()) {
+            return "Already checked out.";
+        }
+
+        attendance.setCheckOutTime(nowIST);
+        attendance.setCheckedIn(false);
+        attendanceRepository.save(attendance);
+
+        Duration duration = Duration.between(attendance.getCheckInTime(), attendance.getCheckOutTime());
+        double totalWorkedHours = duration.toMinutes() / 60.0;
+
+        Salary salary = salaryRepository.findByEmployeeAndMonthAndYear(
+                employee, today.getMonthValue(), today.getYear()
+        );
+        if (salary == null) {
+            return "Salary configuration missing for employee.";
+        }
+
+        int workingDays = salary.getWorkingDays();
+        double oneHourSalary = salary.getOneHourSalary();
+        double otPerHour = salary.getOtPerHour();
+
+        double regularHours = workingDays == 26 ? 12 : 8;
+        double halfDayThreshold = workingDays == 26 ? 6.5 : 4.5;
+
+        double daySalary = 0.0;
+        double otHours = 0.0;
+
+        if (totalWorkedHours < halfDayThreshold) {
+            daySalary = totalWorkedHours * oneHourSalary;
+        } else if (totalWorkedHours > regularHours) {
+            otHours = totalWorkedHours - regularHours;
+            daySalary = (regularHours * oneHourSalary) + (otHours * otPerHour);
+        } else {
+            daySalary = regularHours * oneHourSalary;
+        }
+
+        double newMonthlySalary = salary.getTotalSalaryThisMonth() + daySalary;
+        double newOtHours = salary.getTotalOvertimeHours() + otHours;
+
+        salary.setTotalSalaryThisMonth(newMonthlySalary);
+        salary.setTotalOvertimeHours(newOtHours);
+
+        salaryRepository.save(salary);
+
+        return String.format(
+            "Checked out successfully! Worked %.2f hrs. Earned ₹%.2f today. OT: %.2f hrs",
+            totalWorkedHours, daySalary, otHours
+        );
+    }
+}
 }
