@@ -15,7 +15,6 @@ import javax.validation.Valid;
 
 @RestController
 @RequestMapping("/admin")
-@CrossOrigin("*")
 public class IndustryController {
 
     @Autowired
