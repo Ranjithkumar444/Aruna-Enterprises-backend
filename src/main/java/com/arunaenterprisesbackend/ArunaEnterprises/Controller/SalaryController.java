@@ -13,7 +13,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/admin")
-@CrossOrigin("*")
 public class SalaryController {
 
     @Autowired

@@ -15,5 +15,4 @@ public class ReelDetailsDTO {
     private int burstFactor;
     private int currentWeight;
     private String supplierName;
-
 }
