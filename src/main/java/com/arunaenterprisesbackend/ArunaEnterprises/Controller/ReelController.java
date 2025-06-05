@@ -107,4 +107,26 @@ public class ReelController {
         return ResponseEntity.ok(reels);
     }
 
+    @GetMapping("/reel/details/{barcodeId}")
+    public ResponseEntity<ReelResponseDTO> getReelFullDetails(@PathVariable String barcodeId) {
+        Reel reel = reelRepository.findByBarcodeId(barcodeId);
+
+        if (reel == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+
+        ReelResponseDTO dto = new ReelResponseDTO();
+        dto.setGsm(reel.getGsm());
+        dto.setDeckle(reel.getDeckle());
+        dto.setBurstFactor(reel.getBurstFactor());
+        dto.setInitialWeight(reel.getInitialWeight());
+        dto.setCurrentWeight(reel.getCurrentWeight());
+        dto.setSupplierName(reel.getSupplierName());
+        dto.setStatus(reel.getStatus());
+        dto.setPaperType(reel.getPaperType());
+
+        return ResponseEntity.ok(dto);
+    }
+
+
 }
