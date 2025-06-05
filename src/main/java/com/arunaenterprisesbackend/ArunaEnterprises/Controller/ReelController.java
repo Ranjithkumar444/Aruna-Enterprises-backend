@@ -3,6 +3,7 @@ package com.arunaenterprisesbackend.ArunaEnterprises.Controller;
 import com.arunaenterprisesbackend.ArunaEnterprises.DTO.ReelDTO;
 import com.arunaenterprisesbackend.ArunaEnterprises.DTO.ReelDetailsDTO;
 import com.arunaenterprisesbackend.ArunaEnterprises.DTO.ReelRegistrationResponseDTO;
+import com.arunaenterprisesbackend.ArunaEnterprises.DTO.ReelResponseDTO;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Employee;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Reel;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.ReelStatus;
@@ -74,18 +75,29 @@ public class ReelController {
     }
 
     @GetMapping("/reel/barcode-image/{id}")
-    public ResponseEntity<?> getBarcodeimage(@PathVariable String id) {
+    public ResponseEntity<ReelResponseDTO> getBarcodeimage(@PathVariable String id) {
         Reel reel = reelRepository.findByBarcodeId(id);
 
         if (reel == null) {
             return ResponseEntity
                     .status(HttpStatus.NOT_FOUND)
-                    .body("Reel with barcode ID '" + id + "' not found");
+                    .body(null);
         }
 
+        ReelResponseDTO reelResponseDTO = new ReelResponseDTO();
+        reelResponseDTO.setGsm(reel.getGsm());
+        reelResponseDTO.setDeckle(reel.getDeckle());
+        reelResponseDTO.setStatus(reel.getStatus());
+        reelResponseDTO.setCurrentWeight(reel.getCurrentWeight());
+        reelResponseDTO.setBurstFactor(reel.getBurstFactor());
+        reelResponseDTO.setBarcodeImage(reel.getBarcodeImage());
+        reelResponseDTO.setPaperType(reel.getPaperType());
+        reelResponseDTO.setSupplierName(reel.getSupplierName());
+        reelResponseDTO.setInitialWeight(reel.getInitialWeight());
+
         return ResponseEntity.ok()
-                .contentType(MediaType.IMAGE_PNG)
-                .body(reel.getBarcodeImage());
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(reelResponseDTO);
     }
 
     @GetMapping("/inventory/getReelStocks")
