@@ -75,29 +75,18 @@ public class ReelController {
     }
 
     @GetMapping("/reel/barcode-image/{id}")
-    public ResponseEntity<ReelResponseDTO> getBarcodeimage(@PathVariable String id) {
+    public ResponseEntity<?> getBarcodeimage(@PathVariable String id) {
         Reel reel = reelRepository.findByBarcodeId(id);
 
         if (reel == null) {
             return ResponseEntity
                     .status(HttpStatus.NOT_FOUND)
-                    .body(null);
+                    .body("Reel with barcode ID '" + id + "' not found");
         }
 
-        ReelResponseDTO reelResponseDTO = new ReelResponseDTO();
-        reelResponseDTO.setGsm(reel.getGsm());
-        reelResponseDTO.setDeckle(reel.getDeckle());
-        reelResponseDTO.setStatus(reel.getStatus());
-        reelResponseDTO.setCurrentWeight(reel.getCurrentWeight());
-        reelResponseDTO.setBurstFactor(reel.getBurstFactor());
-        reelResponseDTO.setBarcodeImage(reel.getBarcodeImage());
-        reelResponseDTO.setPaperType(reel.getPaperType());
-        reelResponseDTO.setSupplierName(reel.getSupplierName());
-        reelResponseDTO.setInitialWeight(reel.getInitialWeight());
-
         return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(reelResponseDTO);
+                .contentType(MediaType.IMAGE_PNG)
+                .body(reel.getBarcodeImage());
     }
 
     @GetMapping("/inventory/getReelStocks")
@@ -128,5 +117,5 @@ public class ReelController {
         return ResponseEntity.ok(dto);
     }
 
-
 }
+
