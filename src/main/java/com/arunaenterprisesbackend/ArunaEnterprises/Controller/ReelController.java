@@ -3,6 +3,7 @@ package com.arunaenterprisesbackend.ArunaEnterprises.Controller;
 import com.arunaenterprisesbackend.ArunaEnterprises.DTO.ReelDTO;
 import com.arunaenterprisesbackend.ArunaEnterprises.DTO.ReelDetailsDTO;
 import com.arunaenterprisesbackend.ArunaEnterprises.DTO.ReelRegistrationResponseDTO;
+import com.arunaenterprisesbackend.ArunaEnterprises.DTO.ReelResponseDTO;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Employee;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Reel;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.ReelStatus;
@@ -95,5 +96,27 @@ public class ReelController {
         List<Reel> reels = reelRepository.findByStatusIn(statuses);
         return ResponseEntity.ok(reels);
     }
+
+    @GetMapping("/reel/details/{barcodeId}")
+    public ResponseEntity<ReelResponseDTO> getReelFullDetails(@PathVariable String barcodeId) {
+        Reel reel = reelRepository.findByBarcodeId(barcodeId);
+
+        if (reel == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+
+        ReelResponseDTO dto = new ReelResponseDTO();
+        dto.setGsm(reel.getGsm());
+        dto.setDeckle(reel.getDeckle());
+        dto.setBurstFactor(reel.getBurstFactor());
+        dto.setInitialWeight(reel.getInitialWeight());
+        dto.setCurrentWeight(reel.getCurrentWeight());
+        dto.setSupplierName(reel.getSupplierName());
+        dto.setStatus(reel.getStatus());
+        dto.setPaperType(reel.getPaperType());
+
+        return ResponseEntity.ok(dto);
+    }
+
 
 }
