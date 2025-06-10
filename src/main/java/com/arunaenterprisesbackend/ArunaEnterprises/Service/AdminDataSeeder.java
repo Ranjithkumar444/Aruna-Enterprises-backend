@@ -19,6 +19,7 @@ public class AdminDataSeeder implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
+        try {
         if (adminRepository.findByEmail("ranjith.v.kumar444@gmail.com") == null) {
             Admin superAdmin = new Admin();
             superAdmin.setUserName("ranjithkumar"); // Changed for clarity
@@ -31,6 +32,12 @@ public class AdminDataSeeder implements CommandLineRunner {
             superAdmin.setRole(AdminRole.ROLE_SUPER_ADMIN);
             adminRepository.save(superAdmin);
             System.out.println("Initial Super Admin created successfully.");
+        }else {
+            System.out.println("Super Admin already exists.");
+        }}
+        catch (Exception e) {
+            System.err.println("Seeder failed: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }
