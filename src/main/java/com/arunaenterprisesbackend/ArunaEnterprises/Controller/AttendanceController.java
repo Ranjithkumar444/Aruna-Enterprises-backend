@@ -11,6 +11,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -49,16 +50,27 @@ public class AttendanceController {
                                 attendance.getDate(),
                                 attendance.getCheckInTime(),
                                 attendance.getCheckOutTime(),
-                                attendance.getStatus().toString()
+                                attendance.getStatus().toString(),
+                                attendance.getRegularHours(),
+                                attendance.getOvertimeHours(),
+                                attendance.getDaySalary(),
+                                attendance.isSunday()
                         );
                     } else {
+                        LocalDate today = LocalDate.now();
+                        boolean isSunday = today.getDayOfWeek() == DayOfWeek.SUNDAY;
                         return new AttendanceResponseDTO(
                                 employee.getName(),
                                 employee.getBarcodeId(),
                                 date,
                                 null,
                                 null,
-                                "ABSENT"
+                                "ABSENT",
+                                0.0,
+                                0.0,
+                                0.0,
+                                isSunday
+
                         );
                     }
                 })

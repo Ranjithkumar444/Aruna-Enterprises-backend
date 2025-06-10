@@ -46,4 +46,3 @@ public class SalaryController {
         return ResponseEntity.ok(latestSalaries);
     }
 }
-

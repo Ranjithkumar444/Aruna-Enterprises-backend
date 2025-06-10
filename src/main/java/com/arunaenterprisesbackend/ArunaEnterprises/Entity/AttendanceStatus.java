@@ -2,5 +2,7 @@ package com.arunaenterprisesbackend.ArunaEnterprises.Entity;
 
 public enum AttendanceStatus {
     PRESENT,
-    ABSENT
+    ABSENT,
+    AUTO_PAID,
+    OT_SUNDAY
 }
