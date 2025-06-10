@@ -34,6 +34,8 @@ public class Salary {
 
     private int workingDays;
 
+    private double regularHoursPerDay;
+
     private double otMultiplierFactor;
 
     private double otPerHour;
@@ -42,4 +44,3 @@ public class Salary {
 
     private double oneHourSalary;
 }
-

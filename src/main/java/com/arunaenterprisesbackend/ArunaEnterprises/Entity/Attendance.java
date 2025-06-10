@@ -33,4 +33,12 @@ public class Attendance {
 
     @Column(name = "checked_in")
     private boolean checkedIn;
+
+    private double regularHours;
+    private double overtimeHours;
+    private double daySalary;
+    private boolean isSunday;
+
+    private int month;
+    private int year;
 }

@@ -79,7 +79,7 @@ public class AdminController {
     }
 
     @PostMapping("/create")
-    @PreAuthorize("hasRole('SUPER_ADMIN','ADMIN')") // Only a SUPER_ADMIN can call this endpoint
+    @PreAuthorize("hasRole('SUPER_ADMIN')") // Only a SUPER_ADMIN can call this endpoint
     public ResponseEntity<?> createAdmin(@RequestBody CreateAdminRequestDTO createAdminRequest) {
         if (adminRepository.existsByEmail(createAdminRequest.getEmail())) {
             return ResponseEntity.status(HttpStatus.CONFLICT)

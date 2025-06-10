@@ -17,4 +17,8 @@ public class AttendanceResponseDTO {
     private LocalDateTime checkInTime;
     private LocalDateTime checkOutTime;
     private String status;
+    private double regularHours;
+    private double overtimeHours;
+    private double daySalary;
+    private boolean isSunday;
 }
