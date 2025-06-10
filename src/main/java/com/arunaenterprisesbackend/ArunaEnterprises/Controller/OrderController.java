@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -54,5 +55,16 @@ public class OrderController {
     @GetMapping("/order/getAllOrders")
     public List<Order> getAllOrders() {
         return orderRepository.findAll();
+    }
+
+    @GetMapping("/order/getOrdersByActiveStatus")
+    public ResponseEntity<List<Order>> getOrdersByActiveStatus() {
+        List<OrderStatus> activeStatuses = Arrays.asList(
+                OrderStatus.TODO,
+                OrderStatus.IN_PROGRESS,
+                OrderStatus.COMPLETED
+        );
+        List<Order> orders = orderRepository.findByStatusIn(activeStatuses);
+        return ResponseEntity.ok(orders);
     }
 }

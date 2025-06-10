@@ -26,4 +26,7 @@ public class Admin {
     private String phoneNumber;
     @Column(nullable = false)
     private String gender;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private AdminRole role;
 }

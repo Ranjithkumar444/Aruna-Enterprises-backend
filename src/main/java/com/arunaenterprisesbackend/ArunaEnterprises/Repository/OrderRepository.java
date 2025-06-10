@@ -10,7 +10,7 @@ import java.util.List;
 
 @Repository
 public interface OrderRepository extends JpaRepository<Order,Long> {
-    List<Order> findByStatusIn(List<String> statuses);
+    List<Order> findByStatusIn(List<OrderStatus> statuses);
 
     List<Order> findByStatusAndShippedAtBefore(OrderStatus orderStatus, LocalDateTime cutoff);
 }

@@ -129,6 +129,18 @@
 			<version>6.2.0.Final</version> <!-- Or the latest version -->
 		</dependency>
 
+		<dependency>
+			<groupId>io.github.cdimascio</groupId>
+			<artifactId>java-dotenv</artifactId>
+			<version>5.2.2</version>
+		</dependency>
+
+		<dependency>
+			<groupId>mysql</groupId>
+			<artifactId>mysql-connector-java</artifactId>
+			<version>8.0.33</version>
+		</dependency>
+
 		<!-- Optional: If you need a dependency for logging the validation errors -->
 		<dependency>
 			<groupId>org.jboss.logging</groupId>

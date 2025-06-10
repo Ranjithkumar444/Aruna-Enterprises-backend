@@ -18,12 +18,12 @@ public class CustomUserDetailService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         Admin admin = adminRepository.findByEmail(email);
-        if(admin == null){
-            System.out.println("Admin Not Found");
-            throw  new UsernameNotFoundException("Admin not found");
+        if (admin == null) {
+            System.out.println("Admin Not Found for email: " + email);
+            throw new UsernameNotFoundException("Admin not found with email: " + email);
         }
 
-        System.out.println("Admin Found : " + admin.getEmail());
+        System.out.println("Admin Found : " + admin.getEmail() + " with role: " + admin.getRole());
         return new UserPrincipal(admin);
     }
 }
