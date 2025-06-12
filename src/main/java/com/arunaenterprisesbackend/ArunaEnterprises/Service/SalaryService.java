@@ -51,39 +51,34 @@ public class SalaryService {
         return "Salary details saved for employee ID: " + employee.getId();
     }
 
+    @Transactional
     public void calculateDerivedSalaryFields(Salary salary) {
-        double monthBaseSalary = salary.getMonthlyBaseSalary();
+        double monthlyBaseSalary = salary.getMonthlyBaseSalary();
         int workingDays = salary.getWorkingDays();
-        double otMultiplier = salary.getOtMultiplierFactor();
+        double otMultiplierFactor = salary.getOtMultiplierFactor();
 
-        // Calculate days in current month
-        YearMonth yearMonth = YearMonth.of(salary.getYear(), salary.getMonth());
-        int daysInMonth = yearMonth.lengthOfMonth();
-
-        // Calculate one day salary based on actual days in month
-        double oneDaySalary = monthBaseSalary / daysInMonth;
-
-        // Set regular hours per day based on working pattern
+        double oneDaySalary;
         double regularHoursPerDay;
+
         if (workingDays == 26) {
-            regularHoursPerDay = 12; // 12-hour work day
+            oneDaySalary = monthlyBaseSalary / 26.0;
+            regularHoursPerDay = 12.0; 
+        } else if (workingDays == 30) {
+            oneDaySalary = monthlyBaseSalary / 30.0;
+            regularHoursPerDay = 8.0; 
         } else {
-            regularHoursPerDay = 8;  // 8-hour work day
+            throw new IllegalArgumentException("Invalid number of working days: " + workingDays);
         }
-        salary.setRegularHoursPerDay(regularHoursPerDay);
 
-        // Calculate one hour salary
         double oneHourSalary = oneDaySalary / regularHoursPerDay;
+        double otPerHour = oneHourSalary * otMultiplierFactor;
 
-        // Calculate OT per hour
-        double otPerHour = oneHourSalary * otMultiplier;
-
-        // Set all calculated fields
         salary.setOneDaySalary(oneDaySalary);
+        salary.setRegularHoursPerDay(regularHoursPerDay);
         salary.setOneHourSalary(oneHourSalary);
         salary.setOtPerHour(otPerHour);
     }
-
+    
     public List<SalaryResponseDTO> getCurrentMonthSalaryForAllEmployees() {
         YearMonth currentMonth = YearMonth.now();
         int month = currentMonth.getMonthValue();
