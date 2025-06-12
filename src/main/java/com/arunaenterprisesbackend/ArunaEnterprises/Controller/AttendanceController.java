@@ -1,6 +1,5 @@
 package com.arunaenterprisesbackend.ArunaEnterprises.Controller;
 
-
 import com.arunaenterprisesbackend.ArunaEnterprises.DTO.AttendanceResponseDTO;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Attendance;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Employee;
@@ -48,8 +47,8 @@ public class AttendanceController {
                                 employee.getName(),
                                 employee.getBarcodeId(),
                                 attendance.getDate(),
-                                attendance.getCheckInTime(),
-                                attendance.getCheckOutTime(),
+                                attendance.getCheckInTime(),    // This is now LocalDateTime
+                                attendance.getCheckOutTime(),   // This is now LocalDateTime
                                 attendance.getStatus().toString(),
                                 attendance.getRegularHours(),
                                 attendance.getOvertimeHours(),
@@ -57,20 +56,18 @@ public class AttendanceController {
                                 attendance.isSunday()
                         );
                     } else {
-                        LocalDate today = LocalDate.now();
-                        boolean isSunday = today.getDayOfWeek() == DayOfWeek.SUNDAY;
+                        boolean isSunday = date.getDayOfWeek() == DayOfWeek.SUNDAY;
                         return new AttendanceResponseDTO(
                                 employee.getName(),
                                 employee.getBarcodeId(),
-                                date,
-                                null,
-                                null,
+                                date, 
+                                null, 
+                                null, 
                                 "ABSENT",
                                 0.0,
                                 0.0,
                                 0.0,
                                 isSunday
-
                         );
                     }
                 })
