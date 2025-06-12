@@ -28,12 +28,12 @@ public class AttendanceController {
     @Autowired
     private AttendanceRepository attendanceRepository;
 
+
     @GetMapping("/attendance-list")
     public ResponseEntity<List<AttendanceResponseDTO>> getAttendanceByDate(
             @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
 
         List<Employee> employees = employeeRepository.findAll();
-
         List<Attendance> attendanceRecords = attendanceRepository.findByDate(date);
 
         Map<String, Attendance> attendanceMap = attendanceRecords.stream()
@@ -42,6 +42,7 @@ public class AttendanceController {
         List<AttendanceResponseDTO> response = employees.stream()
                 .map(employee -> {
                     Attendance attendance = attendanceMap.get(employee.getBarcodeId());
+                    boolean isSunday = date.getDayOfWeek() == DayOfWeek.SUNDAY;
 
                     if (attendance != null) {
                         return new AttendanceResponseDTO(
@@ -54,11 +55,9 @@ public class AttendanceController {
                                 attendance.getRegularHours(),
                                 attendance.getOvertimeHours(),
                                 attendance.getDaySalary(),
-                                attendance.isSunday()
+                                isSunday
                         );
                     } else {
-                        LocalDate today = LocalDate.now();
-                        boolean isSunday = today.getDayOfWeek() == DayOfWeek.SUNDAY;
                         return new AttendanceResponseDTO(
                                 employee.getName(),
                                 employee.getBarcodeId(),
@@ -70,7 +69,6 @@ public class AttendanceController {
                                 0.0,
                                 0.0,
                                 isSunday
-
                         );
                     }
                 })

@@ -1,15 +1,16 @@
 package com.arunaenterprisesbackend.ArunaEnterprises.DTO;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Getter
+@Setter
 public class AttendanceResponseDTO {
     private String name;
     private String barcodeId;
@@ -21,4 +22,11 @@ public class AttendanceResponseDTO {
     private double overtimeHours;
     private double daySalary;
     private boolean isSunday;
+
+    public AttendanceResponseDTO(String name, String barcodeId, LocalDate date,
+                                 LocalDateTime checkInTime, LocalDateTime checkOutTime,
+                                 String status) {
+        this(name, barcodeId, date, checkInTime, checkOutTime, status,
+                0.0, 0.0, 0.0, date.getDayOfWeek() == DayOfWeek.SUNDAY);
+    }
 }
