@@ -18,5 +18,5 @@ public class CreateAdminRequestDTO {
     private String password;
     private String phoneNumber;
     private String gender;
-    private AdminRole role; // The role to assign to the new admin
+    private AdminRole role;
 }

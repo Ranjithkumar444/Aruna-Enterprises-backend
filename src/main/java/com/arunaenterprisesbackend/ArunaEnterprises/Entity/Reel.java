@@ -24,6 +24,8 @@ public class Reel {
     @Column(name = "barcode_id", unique = true, length = 100)
     private String barcodeId;
 
+    private Long reelNo;
+
     private int gsm;
 
     @Column(name = "burst_factor")
@@ -61,5 +63,7 @@ public class Reel {
     private byte[] barcodeImage;
 
     private String reelSet;
+
+//    private String twoSheetOneBoxReelSet;
 }
 

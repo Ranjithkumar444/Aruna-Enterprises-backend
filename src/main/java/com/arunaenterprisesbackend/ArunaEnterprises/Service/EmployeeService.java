@@ -8,11 +8,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Random;
 
 @Service
 public class EmployeeService {
+
+    private static final ZoneId IST_ZONE = ZoneId.of("Asia/Kolkata");
 
     @Autowired
     private EmployeeRepository employeeRepository;
@@ -36,7 +39,7 @@ public class EmployeeService {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         employee.setDob(LocalDate.parse(employeeRegister.getDob(), formatter));
 
-        employee.setJoinedAt(LocalDate.now());
+        employee.setJoinedAt(LocalDate.now(IST_ZONE));
 
         String barcodeID = generateBarcodeId();
         employee.setBarcodeId(barcodeID);
@@ -55,7 +58,7 @@ public class EmployeeService {
         Employee existingEmployee;
 
         do {
-            int randomNumber = 100 + random.nextInt(900);
+            int randomNumber = 100 + random.nextInt(1900);
             barcodeId = "EMP-" + randomNumber;
             existingEmployee = employeeRepository.findByBarcodeId(barcodeId);
         } while (existingEmployee != null);

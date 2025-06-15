@@ -10,7 +10,7 @@ import java.time.LocalDate;
 @Getter
 @Setter
 public class ReelDTO {
-
+    private Long reelNo;
     private int gsm;
     private int burstFactor;
     private int deckle;

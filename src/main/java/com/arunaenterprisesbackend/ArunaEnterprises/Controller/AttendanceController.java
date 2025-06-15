@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -20,6 +21,8 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/admin")
 public class AttendanceController {
+
+    private static final ZoneId IST_ZONE = ZoneId.of("Asia/Kolkata");
 
     @Autowired
     private EmployeeRepository employeeRepository;

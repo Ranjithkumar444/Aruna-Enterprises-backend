@@ -10,4 +10,5 @@ import lombok.*;
 public class BarcodeDTO {
     private String barcodeId;
     private String reelSet;
+    private Long orderId;
 }

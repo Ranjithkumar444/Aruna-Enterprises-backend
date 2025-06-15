@@ -9,6 +9,7 @@ import com.arunaenterprisesbackend.ArunaEnterprises.Repository.EmployeeRepositor
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.SalaryRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.time.*;
@@ -16,6 +17,8 @@ import java.util.Optional;
 
 @Service
 public class AttendanceService {
+
+    private static final ZoneId IST_ZONE = ZoneId.of("Asia/Kolkata");
 
     @Autowired
     private EmployeeRepository employeeRepository;
@@ -37,11 +40,18 @@ public class AttendanceService {
             throw new IllegalArgumentException("No employee found with barcode ID: " + barcodeId);
         }
 
-        LocalDate today = LocalDate.now();
+        ZonedDateTime nowInIST = ZonedDateTime.now(IST_ZONE);
+        LocalDate today = nowInIST.toLocalDate();
+        LocalTime currentTime = nowInIST.toLocalTime();
+
         boolean isSunday = today.getDayOfWeek() == DayOfWeek.SUNDAY;
         Attendance attendance = attendanceRepository.findByEmployeeAndDate(employee, today);
         Salary salary = salaryRepository.findByEmployeeAndMonthAndYear(
                 employee, today.getMonthValue(), today.getYear());
+
+        if (salary == null) {
+            throw new RuntimeException("Salary configuration missing for employee for " + today.getMonth() + " " + today.getYear());
+        }
 
         if (attendance == null) {
             // Check in
@@ -49,33 +59,33 @@ public class AttendanceService {
             attendance.setEmployee(employee);
             attendance.setDate(today);
             attendance.setBarcodeId(barcodeId);
-            attendance.setCheckInTime(LocalDateTime.now());
+            attendance.setCheckInTime(nowInIST.toLocalDateTime());
+            attendance.setCheckedIn(true);
+            attendance.setSunday(isSunday);
 
             if (isSunday) {
-                // For 30-day workers: Deduct auto-paid salary and convert to OT
                 if (salary.getWorkingDays() == 30) {
-                    salary.setTotalSalaryThisMonth(
-                            salary.getTotalSalaryThisMonth() - salary.getOneDaySalary());
+                    salary.setTotalSalaryThisMonth(salary.getTotalSalaryThisMonth() - salary.getOneDaySalary());
+                    salaryRepository.save(salary);
                 }
                 attendance.setStatus(AttendanceStatus.OT_SUNDAY);
             } else {
                 attendance.setStatus(AttendanceStatus.PRESENT);
             }
-            attendance.setCheckedIn(true);
-            attendance.setSunday(isSunday);
 
             attendanceRepository.save(attendance);
             return "Checked in successfully!";
         } else {
+            // Check out
             if (!attendance.isCheckedIn()) {
                 return "Already checked out.";
             }
+            if (attendance.getCheckInTime() == null) {
+                throw new IllegalStateException("Cannot check out, check-in time is missing for attendance record ID: " + attendance.getId());
+            }
 
-            // Check out
-            attendance.setCheckOutTime(LocalDateTime.now());
+            attendance.setCheckOutTime(nowInIST.toLocalDateTime());
             attendance.setCheckedIn(false);
-            attendanceRepository.save(attendance);
-
             calculateDailySalary(employee, attendance);
 
             return String.format("Checked out successfully! Worked %.2f hours (%.2f regular + %.2f OT). Earned ₹%.2f",
@@ -87,34 +97,30 @@ public class AttendanceService {
     }
 
     public void calculateDailySalary(Employee employee, Attendance attendance) {
+        if (attendance.getCheckInTime() == null || attendance.getCheckOutTime() == null) {
+            throw new IllegalArgumentException("Check-in or Check-out time is missing for attendance ID: " + attendance.getId());
+        }
+
+        ZonedDateTime checkIn = attendance.getCheckInTime().atZone(IST_ZONE);
+        ZonedDateTime checkOut = attendance.getCheckOutTime().atZone(IST_ZONE);
+
         LocalDate date = attendance.getDate();
         boolean isSunday = date.getDayOfWeek() == DayOfWeek.SUNDAY;
 
         Salary salary = salaryRepository.findByEmployeeAndMonthAndYear(
-                employee, date.getMonthValue(), date.getYear()
-        );
+                employee, date.getMonthValue(), date.getYear());
         if (salary == null) {
             throw new RuntimeException("Salary configuration missing for employee.");
         }
 
-        if (isSunday && salary.getWorkingDays() == 30 && attendance.getCheckInTime() == null) {
-            double normalDaySalary = salary.getOneDaySalary();
-
-            salary.setTotalSalaryThisMonth(salary.getTotalSalaryThisMonth() + normalDaySalary);
-            salaryRepository.save(salary);
-
-            attendance.setStatus(AttendanceStatus.ABSENT);
-            attendance.setRegularHours(0.0);
-            attendance.setOvertimeHours(0.0);
-            attendance.setDaySalary(normalDaySalary);
-            attendanceRepository.save(attendance);
-            return;
+        Duration duration = Duration.between(checkIn, checkOut);
+        double totalWorkedHours = duration.toMinutes() / 60.0;
+        if (totalWorkedHours < 0) {
+            totalWorkedHours = 0;
+            System.err.println("Warning: Negative worked hours calculated for attendance ID: " + attendance.getId());
         }
 
-        Duration duration = Duration.between(attendance.getCheckInTime(), attendance.getCheckOutTime());
-        double totalWorkedHours = duration.toMinutes() / 60.0;
 
-        double regularHoursPerDay = salary.getRegularHoursPerDay();
         double oneHourSalary = salary.getOneHourSalary();
         double otPerHour = salary.getOtPerHour();
         int workingDays = salary.getWorkingDays();
@@ -123,45 +129,40 @@ public class AttendanceService {
         double otHours = 0.0;
         double regularHours = 0.0;
 
-        if (workingDays == 26) {
-            if (isSunday) {
-                // All Sunday hours are OT for 26-day workers
-                otHours = totalWorkedHours;
-                daySalary = otHours * otPerHour;
-            } else {
-                if (totalWorkedHours <= regularHoursPerDay) {
+        if (isSunday) {
+            otHours = totalWorkedHours;
+            daySalary = otHours * otPerHour;
+            attendance.setStatus(AttendanceStatus.OT_SUNDAY);
+        } else {
+            if (workingDays == 26) {
+                if (totalWorkedHours <= 12.0) {
                     regularHours = totalWorkedHours;
                     daySalary = regularHours * oneHourSalary;
                 } else {
-                    regularHours = regularHoursPerDay;
-                    otHours = totalWorkedHours - regularHoursPerDay;
+                    regularHours = 12.0;
+                    otHours = totalWorkedHours - 12.0;
+                    daySalary = (regularHours * oneHourSalary) + (otHours * otPerHour);
+                }
+            } else { // 30-day workers on a weekday
+
+                if (totalWorkedHours <= 8.5) {
+                    regularHours = totalWorkedHours;
+                    daySalary = regularHours * oneHourSalary;
+                } else {
+                    regularHours = 8.5;
+                    otHours = totalWorkedHours - 8.5;
                     daySalary = (regularHours * oneHourSalary) + (otHours * otPerHour);
                 }
             }
-        } else {
-            // 30-day workers
-            if (isSunday) {
-                // All Sunday hours are OT
-                otHours = totalWorkedHours;
-                daySalary = otHours * otPerHour;
-            } else {
-                // Paid full day even if worked less
-                regularHours = regularHoursPerDay;
-                daySalary = regularHours * oneHourSalary;
-
-                if (totalWorkedHours > regularHoursPerDay) {
-                    otHours = totalWorkedHours - regularHoursPerDay;
-                    daySalary += otHours * otPerHour;
-                }
-            }
+            attendance.setStatus(AttendanceStatus.PRESENT);
         }
 
-        // Update salary record
+        // If an employee works on a weekday, you simply add the earned daySalary.
         salary.setTotalSalaryThisMonth(salary.getTotalSalaryThisMonth() + daySalary);
         salary.setTotalOvertimeHours(salary.getTotalOvertimeHours() + otHours);
-        salaryRepository.save(salary);
+        salaryRepository.save(salary); // Save updated salary
 
-        // Update attendance with calculated values
+        // Update attendance record
         attendance.setRegularHours(regularHours);
         attendance.setOvertimeHours(otHours);
         attendance.setDaySalary(daySalary);

@@ -8,10 +8,14 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.OrderStatus;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.List;
 
 @Service
 public class OrderService {
+
+    private static final ZoneId IST_ZONE = ZoneId.of("Asia/Kolkata");
 
     @Autowired
     private OrderRepository orderRepository;
@@ -20,7 +24,7 @@ public class OrderService {
         try {
             Order order1 = new Order();
             order1.setClient(order.getClient());
-            order1.setCreatedAt(LocalDateTime.now());
+            order1.setCreatedAt(ZonedDateTime.now(IST_ZONE).toLocalDateTime());
             order1.setCreatedBy(order.getCreatedBy());
             order1.setSize(order.getSize());
             order1.setStatus(OrderStatus.TODO);
@@ -29,7 +33,7 @@ public class OrderService {
             order1.setExpectedCompletionDate(order.getExpectedCompletionDate());
             order1.setProductType(order.getProductType());
             order1.setMaterialGrade(order.getMaterialGrade());
-            order1.setUpdatedAt(LocalDateTime.now());
+            order1.setUpdatedAt(ZonedDateTime.now(IST_ZONE).toLocalDateTime());
             order1.setUnit(order.getUnit());
             order1.setTransportNumber(order.getTransportNumber());
             orderRepository.save(order1);
@@ -49,11 +53,11 @@ public class OrderService {
         order.setUpdatedAt(LocalDateTime.now());
 
         if (newStatus == OrderStatus.COMPLETED) {
-            order.setCompletedAt(LocalDateTime.now());
+            order.setUpdatedAt(ZonedDateTime.now(IST_ZONE).toLocalDateTime());
             order.setShippedAt(null);
             order.setTransportNumber(null);
         } else if (newStatus == OrderStatus.SHIPPED) {
-            order.setShippedAt(LocalDateTime.now());
+            order.setCompletedAt(ZonedDateTime.now(IST_ZONE).toLocalDateTime());
             order.setTransportNumber(transportNumber);
         } else {
             order.setCompletedAt(null);
@@ -64,12 +68,5 @@ public class OrderService {
         orderRepository.save(order);
     }
 
-    @Scheduled(cron = "0 0 * * * *")
-    public void cleanupOldShippedOrders() {
-        LocalDateTime cutoff = LocalDateTime.now().minusHours(24);
-        List<Order> oldShippedOrders = orderRepository.findByStatusAndShippedAtBefore(
-                OrderStatus.SHIPPED, cutoff);
 
-        orderRepository.deleteAll(oldShippedOrders);
-    }
 }

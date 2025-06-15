@@ -13,9 +13,18 @@ public class WeightCalculation {
         int ply = dto.getPly();
         int gsm = dto.getGsm();
         int numberOfBoxes = dto.getNoOfBoxMade();
+        String ops = dto.getOps();
 
-        double surfaceArea = (2 * length + 2 * width + 50) * (height + width + 30);
-        double areaInM2 = surfaceArea / 1_000_000.0;
+        double surfaceArea = 0.0;
+        double areaInM2 = 0.0;
+
+        if(ops.equalsIgnoreCase("oneops")){
+            surfaceArea = (2 * length + 2 * width + 50) * (height + width + 30);
+            areaInM2 = surfaceArea / 1_000_000.0;
+        }else{
+            surfaceArea = ( (2 * length + 50) + (2 * width + 50)) * (height + width + 30);
+            areaInM2 = surfaceArea / 1_000_000.0;
+        }
 
         double weightPerBox = 0;
 
@@ -25,10 +34,10 @@ public class WeightCalculation {
         } else if (LinerOrFlute.equalsIgnoreCase("liner")) {
             int linerLayers = (ply / 2);
             weightPerBox = areaInM2 * gsm * linerLayers;
-        }else if(LinerOrFlute.equalsIgnoreCase("cutting")){
+        } else if (LinerOrFlute.equalsIgnoreCase("cutting")) {
             weightPerBox = areaInM2 * gsm;
-        }else{
-            int fluteLayers = ply/2;
+        } else {
+            int fluteLayers = ply / 2;
             weightPerBox = areaInM2 * gsm * 1.75 * fluteLayers;
         }
 
@@ -36,4 +45,3 @@ public class WeightCalculation {
         return totalWeight;
     }
 }
-

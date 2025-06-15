@@ -10,9 +10,12 @@ import com.arunaenterprisesbackend.ArunaEnterprises.Entity.ReelStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 
 @Service
 public class ReelService {
+
+    private static final ZoneId IST_ZONE = ZoneId.of("Asia/Kolkata");
 
     @Autowired
     private ReelRepository reelRepository;
@@ -26,11 +29,11 @@ public class ReelService {
         reel.setCreatedBy(reeldata.getCreatedBy());
         reel.setInitialWeight(reeldata.getInitialWeight());
         reel.setCurrentWeight(reeldata.getInitialWeight());
+        reel.setReelNo(reeldata.getReelNo());
         reel.setSupplierName(reeldata.getSupplierName());
         reel.setUnit(reeldata.getUnit());
         reel.setPaperType(reeldata.getPaperType());
-        reel.setCreatedAt(LocalDate.now());
-
+        reel.setCreatedAt(LocalDate.now(IST_ZONE));
         reelRepository.save(reel);
 
         String datestring = reel.getCreatedAt().toString().replaceAll("-", "");
