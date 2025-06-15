@@ -116,12 +116,6 @@
 			<artifactId>cloudinary-http44</artifactId>
 			<version>1.37.0</version>
 		</dependency>
-		<dependency>
-			<groupId>ch.qos.logback</groupId>
-			<artifactId>logback-classic</artifactId>
-			<version>1.4.14</version> <!-- Use latest compatible with Java 17 -->
-		</dependency>
-
 
 		<!-- Add Hibernate Validator (the implementation of the validation API) -->
 		<dependency>
