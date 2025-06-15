@@ -32,14 +32,13 @@ public class JWTService {
         }
 
         Map<String, Object> claims = new HashMap<>();
-        // Add the role name (e.g., "ROLE_SUPER_ADMIN") to the claims
         claims.put("role", admin.getRole().name());
 
         return Jwts.builder()
                 .setClaims(claims)
                 .setSubject(email)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24)) // 10 hours validity
+                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24))
                 .signWith(getSignKey(), SignatureAlgorithm.HS256)
                 .compact();
     }

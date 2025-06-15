@@ -9,7 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ReelDetailsDTO {
-
+    private Long reelNo;
     private int gsm;
     private int deckle;
     private int burstFactor;

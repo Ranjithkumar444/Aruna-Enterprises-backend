@@ -10,6 +10,7 @@ import lombok.*;
 @Setter
 public class CalculationDTO {
     private String barcodeId;
+    private String ops;
     private int width;
     private int height;
     private int length;
@@ -17,4 +18,5 @@ public class CalculationDTO {
     private int gsm;
     private int noOfBoxMade;
     private String scannedBy;
+    private String orderCompleted;
 }

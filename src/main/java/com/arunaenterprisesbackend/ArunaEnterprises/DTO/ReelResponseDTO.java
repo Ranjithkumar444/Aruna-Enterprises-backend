@@ -10,9 +10,10 @@ import lombok.*;
 @Getter
 @Setter
 public class ReelResponseDTO {
-
+    private String barcodeId;
     private int initialWeight;
     private int currentWeight;
+    private Long reelNo;
     private int gsm;
     private int deckle;
     private int burstFactor;

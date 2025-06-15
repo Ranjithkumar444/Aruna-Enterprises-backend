@@ -4,16 +4,16 @@ import com.arunaenterprisesbackend.ArunaEnterprises.DTO.IndustryDTO;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Industry;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.IndustryRepository;
 import com.cloudinary.Cloudinary;
-import com.cloudinary.utils.ObjectUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Autowired;
-import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.Base64;
-import java.util.Map;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 
 @Service
 public class IndustryService {
+
+    private static final ZoneId IST_ZONE = ZoneId.of("Asia/Kolkata");
 
     @Autowired
     private IndustryRepository industryRepository;
@@ -34,7 +34,7 @@ public class IndustryService {
             industry.setCity(dto.getCity());
             industry.setState(dto.getState());
             industry.setAddress(dto.getAddress());
-            industry.setUploadedAt(LocalDateTime.now());
+            industry.setUploadedAt(ZonedDateTime.now(IST_ZONE).toLocalDateTime());
 
             industryRepository.save(industry);
 

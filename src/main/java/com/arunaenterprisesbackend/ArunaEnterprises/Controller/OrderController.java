@@ -2,7 +2,9 @@ package com.arunaenterprisesbackend.ArunaEnterprises.Controller;
 
 import com.arunaenterprisesbackend.ArunaEnterprises.DTO.OrderDTO;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Order;
+import com.arunaenterprisesbackend.ArunaEnterprises.Entity.OrderReelUsage;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.OrderStatus;
+import com.arunaenterprisesbackend.ArunaEnterprises.Repository.OrderReelUsageRepository;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.OrderRepository;
 import com.arunaenterprisesbackend.ArunaEnterprises.Service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +25,9 @@ public class OrderController {
 
     @Autowired
     private OrderRepository orderRepository;
+
+    @Autowired
+    private OrderReelUsageRepository orderReelUsageRepository;
 
     @PostMapping("/order/create-order")
     public ResponseEntity<String> createOrderCnt(@RequestBody OrderDTO order) {
@@ -66,5 +71,21 @@ public class OrderController {
         );
         List<Order> orders = orderRepository.findByStatusIn(activeStatuses);
         return ResponseEntity.ok(orders);
+    }
+
+    @GetMapping("/order/getCompletedOrders")
+    public ResponseEntity<List<Order>> getOrderCompletedOrders() {
+        List<OrderStatus> activeStatuses = List.of(
+                OrderStatus.COMPLETED
+        );
+        List<Order> orders = orderRepository.findByStatusIn(activeStatuses);
+        return ResponseEntity.ok(orders);
+    }
+
+    @GetMapping("/order/history/getAllOrderReelUsage")
+    public ResponseEntity<List<OrderReelUsage>> getAllOrderReelUsage(){
+        List<OrderReelUsage> listoforder = orderReelUsageRepository.findAll();
+
+        return ResponseEntity.ok(listoforder);
     }
 }
