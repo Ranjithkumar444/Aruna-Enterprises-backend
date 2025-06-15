@@ -119,6 +119,7 @@
 		<dependency>
 			<groupId>ch.qos.logback</groupId>
 			<artifactId>logback-classic</artifactId>
+			<version>1.4.14</version> <!-- Use latest compatible with Java 17 -->
 		</dependency>
 
 
