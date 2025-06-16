@@ -28,7 +28,6 @@ public class ContactMessage {
     private String message;
 
     @CreationTimestamp
-    @Column(updatable = false)
     private ZonedDateTime createdAt; // Changed from LocalDateTime
 
     private boolean replyStatus;

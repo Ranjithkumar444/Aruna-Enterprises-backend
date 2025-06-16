@@ -18,9 +18,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 
 @RestController
@@ -120,18 +123,18 @@ public class AdminController {
     }
 
     @GetMapping("/contact/contactDetails")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
     public ResponseEntity<List<ContactMessage>> getContactRequest() {
         try {
-            // Note: This needs to be within an authenticated endpoint, check SecurityConfig.
-            // Also, this line `LocalDateTime cutoff = LocalDateTime.now().minusHours(168);` seems to be outside the method in your snippet
-            // It should be inside like this:
-            LocalDateTime cutoff = LocalDateTime.now().minusHours(168);
+            ZonedDateTime cutoff = ZonedDateTime.now(ZoneId.of("Asia/Kolkata")).minusHours(168);
             List<ContactMessage> recentMessages = contactRepository.findMessagesFromLast48Hours(cutoff);
+
             return ResponseEntity.ok(recentMessages);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(null);
         }
     }
+
 
     @PutMapping("/contact/updateReplyStatus/{id}")
     public ResponseEntity<?> updateReplyStatus(
@@ -157,4 +160,21 @@ public class AdminController {
             return ResponseEntity.badRequest().body("Failed to register box details");
         }
     }
+
+    @PutMapping("/contact/{id}/reply-status")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
+    public ResponseEntity<?> updateReplyStatus(@PathVariable Long id, @RequestParam boolean status) {
+        Optional<ContactMessage> optionalMessage = contactRepository.findById(id);
+
+        if (optionalMessage.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Message not found");
+        }
+
+        ContactMessage message = optionalMessage.get();
+        message.setReplyStatus(status);
+        contactRepository.save(message);
+
+        return ResponseEntity.ok("Reply status updated successfully");
+    }
+
 }
