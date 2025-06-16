@@ -38,7 +38,8 @@ public class AttendanceService {
             throw new IllegalArgumentException("No employee found with barcode ID: " + barcodeId);
         }
 
-        ZonedDateTime nowInIST = ZonedDateTime.now(IST_ZONE);
+        ZonedDateTime nowInIST = ZonedDateTime.now(ZoneOffset.UTC)
+                .withZoneSameInstant(IST_ZONE);
         LocalDate today = nowInIST.toLocalDate();
         LocalTime currentTime = nowInIST.toLocalTime();
 
