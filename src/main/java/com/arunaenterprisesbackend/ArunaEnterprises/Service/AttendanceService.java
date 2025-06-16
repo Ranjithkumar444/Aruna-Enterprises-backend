@@ -9,11 +9,9 @@ import com.arunaenterprisesbackend.ArunaEnterprises.Repository.EmployeeRepositor
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.SalaryRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.time.*;
-import java.util.Optional;
 
 @Service
 public class AttendanceService {
@@ -59,7 +57,7 @@ public class AttendanceService {
             attendance.setEmployee(employee);
             attendance.setDate(today);
             attendance.setBarcodeId(barcodeId);
-            attendance.setCheckInTime(nowInIST.toLocalDateTime());
+            attendance.setCheckInTime(nowInIST);
             attendance.setCheckedIn(true);
             attendance.setSunday(isSunday);
 
@@ -84,7 +82,7 @@ public class AttendanceService {
                 throw new IllegalStateException("Cannot check out, check-in time is missing for attendance record ID: " + attendance.getId());
             }
 
-            attendance.setCheckOutTime(nowInIST.toLocalDateTime());
+            attendance.setCheckOutTime(nowInIST);
             attendance.setCheckedIn(false);
             calculateDailySalary(employee, attendance);
 
@@ -101,8 +99,8 @@ public class AttendanceService {
             throw new IllegalArgumentException("Check-in or Check-out time is missing for attendance ID: " + attendance.getId());
         }
 
-        ZonedDateTime checkIn = attendance.getCheckInTime().atZone(IST_ZONE);
-        ZonedDateTime checkOut = attendance.getCheckOutTime().atZone(IST_ZONE);
+        ZonedDateTime checkIn = attendance.getCheckInTime();
+        ZonedDateTime checkOut = attendance.getCheckOutTime();
 
         LocalDate date = attendance.getDate();
         boolean isSunday = date.getDayOfWeek() == DayOfWeek.SUNDAY;
@@ -119,7 +117,6 @@ public class AttendanceService {
             totalWorkedHours = 0;
             System.err.println("Warning: Negative worked hours calculated for attendance ID: " + attendance.getId());
         }
-
 
         double oneHourSalary = salary.getOneHourSalary();
         double otPerHour = salary.getOtPerHour();
@@ -144,7 +141,6 @@ public class AttendanceService {
                     daySalary = (regularHours * oneHourSalary) + (otHours * otPerHour);
                 }
             } else { // 30-day workers on a weekday
-
                 if (totalWorkedHours <= 8.5) {
                     regularHours = totalWorkedHours;
                     daySalary = regularHours * oneHourSalary;
@@ -157,12 +153,10 @@ public class AttendanceService {
             attendance.setStatus(AttendanceStatus.PRESENT);
         }
 
-        // If an employee works on a weekday, you simply add the earned daySalary.
         salary.setTotalSalaryThisMonth(salary.getTotalSalaryThisMonth() + daySalary);
         salary.setTotalOvertimeHours(salary.getTotalOvertimeHours() + otHours);
-        salaryRepository.save(salary); // Save updated salary
+        salaryRepository.save(salary);
 
-        // Update attendance record
         attendance.setRegularHours(regularHours);
         attendance.setOvertimeHours(otHours);
         attendance.setDaySalary(daySalary);

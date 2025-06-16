@@ -6,6 +6,7 @@ import lombok.Setter;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 
 @Entity
 @Table(name = "attendance")
@@ -24,9 +25,9 @@ public class Attendance {
     private Employee employee;
 
     private LocalDate date;
-    private LocalDateTime checkInTime;
 
-    private LocalDateTime checkOutTime;
+    private ZonedDateTime checkInTime;
+    private ZonedDateTime checkOutTime;
 
     @Enumerated(EnumType.STRING)
     private AttendanceStatus status;

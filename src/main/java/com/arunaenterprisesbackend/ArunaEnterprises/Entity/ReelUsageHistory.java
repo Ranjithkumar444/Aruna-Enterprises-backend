@@ -8,6 +8,8 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
+import java.time.ZonedDateTime;
+
 @Entity
 @Table(name = "reel_usage_history")
 @Getter
@@ -24,7 +26,7 @@ public class ReelUsageHistory {
 
     private double usedWeight;
 
-    private LocalDateTime usedAt;
+    private ZonedDateTime usedAt;
 
     private String usedBy;
 

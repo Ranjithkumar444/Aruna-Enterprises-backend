@@ -5,6 +5,8 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
+import java.time.ZonedDateTime;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -22,6 +24,6 @@ public class OrderReelUsageResponseDTO {
     private Integer gsm;
     private Integer burstFactor;
     private Integer deckle;
-    private LocalDateTime courgationIn;
-    private LocalDateTime courgationOut;
+    private ZonedDateTime courgationIn;
+    private ZonedDateTime courgationOut;
 }

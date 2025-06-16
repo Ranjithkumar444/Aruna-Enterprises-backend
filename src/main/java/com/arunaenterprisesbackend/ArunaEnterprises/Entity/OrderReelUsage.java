@@ -8,6 +8,8 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
+import java.time.ZonedDateTime;
+
 @Entity
 @Table(name = "order_reel_usage")
 @Setter
@@ -15,6 +17,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class OrderReelUsage {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -28,8 +31,11 @@ public class OrderReelUsage {
     private Reel reel;
 
     private double weightConsumed;
-    private LocalDateTime courgationIn;
-    private LocalDateTime courgationOut;
+
+    private ZonedDateTime courgationIn;
+
+    private ZonedDateTime courgationOut;
+
     private String recordedBy;
 
     private String usageType;
