@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import java.time.LocalDate;
+import java.time.ZonedDateTime;
 
 
 @Entity
@@ -33,7 +34,8 @@ public class Employee {
     @Column(nullable = false)
     private String phoneNumber;
 
-    private LocalDate joinedAt;
+    private ZonedDateTime joinedAt;
+
 
     private String bloodGroup;
 

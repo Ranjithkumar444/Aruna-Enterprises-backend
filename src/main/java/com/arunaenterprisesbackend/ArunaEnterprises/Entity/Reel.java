@@ -37,7 +37,7 @@ public class Reel {
     private int initialWeight;
 
     @Column(name = "previous_weight")
-    private int previousWeight;
+    private Integer previousWeight = 0;;
 
     @Column(name = "current_weight")
     private int currentWeight;

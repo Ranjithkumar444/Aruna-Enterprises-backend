@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Random;
 
@@ -39,7 +40,7 @@ public class EmployeeService {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         employee.setDob(LocalDate.parse(employeeRegister.getDob(), formatter));
 
-        employee.setJoinedAt(LocalDate.now(IST_ZONE));
+        employee.setJoinedAt(ZonedDateTime.now(IST_ZONE));
 
         String barcodeID = generateBarcodeId();
         employee.setBarcodeId(barcodeID);

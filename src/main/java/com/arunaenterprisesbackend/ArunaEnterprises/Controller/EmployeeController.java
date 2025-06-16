@@ -100,6 +100,25 @@ public class EmployeeController {
         }
     }
 
+    @PostMapping("/employee/register")
+    public ResponseEntity<EmployeeRegisterResponse> EmployeeRegister(@RequestBody EmployeeRegister employeeRegister) {
+        try {
+            Employee employee = employeeService.registerEmployee(employeeRegister);
+            EmployeeRegisterResponse response = new EmployeeRegisterResponse();
+            response.setEmployeeId(employee.getId());
+            response.setBarcodeId(employee.getBarcodeId());
+
+            // Convert image to Base64
+            String base64Image = Base64.getEncoder().encodeToString(employee.getBarcodeImage());
+            response.setBarcodeImageBase64(base64Image);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
 
     @GetMapping("/get-employees")
     public ResponseEntity<List<Employee>> getAllEmployees(){

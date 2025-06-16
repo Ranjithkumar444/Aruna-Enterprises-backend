@@ -30,6 +30,7 @@ public class ReelService {
         reel.setInitialWeight(reeldata.getInitialWeight());
         reel.setCurrentWeight(reeldata.getInitialWeight());
         reel.setReelNo(reeldata.getReelNo());
+        reel.setPreviousWeight(reel.getInitialWeight());
         reel.setSupplierName(reeldata.getSupplierName());
         reel.setUnit(reeldata.getUnit());
         reel.setPaperType(reeldata.getPaperType());
