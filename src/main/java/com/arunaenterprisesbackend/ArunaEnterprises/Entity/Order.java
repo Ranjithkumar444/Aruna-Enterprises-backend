@@ -5,8 +5,11 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 
 @Entity
 @Table(name = "orders")
@@ -36,23 +39,24 @@ public class Order {
     @Enumerated(EnumType.STRING)
     private OrderStatus status;
 
-    private LocalDateTime createdAt;
+    @CreationTimestamp
+    @Column(updatable = false)
+    private ZonedDateTime createdAt;
 
-    private LocalDateTime updatedAt;
+    @UpdateTimestamp
+    private ZonedDateTime updatedAt;
 
-    private LocalDateTime expectedCompletionDate;
+    private ZonedDateTime expectedCompletionDate;
 
     private String createdBy;
 
     @Column(name = "completed_at")
-    private LocalDateTime completedAt;
+    private ZonedDateTime completedAt;
 
     @Column(name = "shipped_at")
-    private LocalDateTime shippedAt;
+    private ZonedDateTime shippedAt;
 
     private String unit;
 
     private String transportNumber;
-
 }
-

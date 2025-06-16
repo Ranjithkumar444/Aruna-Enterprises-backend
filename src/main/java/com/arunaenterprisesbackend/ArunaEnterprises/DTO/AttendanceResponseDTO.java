@@ -5,6 +5,7 @@ import lombok.*;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 
 @Data
 @AllArgsConstructor
@@ -15,8 +16,8 @@ public class AttendanceResponseDTO {
     private String name;
     private String barcodeId;
     private LocalDate date;
-    private LocalDateTime checkInTime;
-    private LocalDateTime checkOutTime;
+    private ZonedDateTime checkInTime;
+    private ZonedDateTime checkOutTime;
     private String status;
     private double regularHours;
     private double overtimeHours;
@@ -24,7 +25,7 @@ public class AttendanceResponseDTO {
     private boolean isSunday;
 
     public AttendanceResponseDTO(String name, String barcodeId, LocalDate date,
-                                 LocalDateTime checkInTime, LocalDateTime checkOutTime,
+                                 ZonedDateTime checkInTime, ZonedDateTime checkOutTime,
                                  String status) {
         this(name, barcodeId, date, checkInTime, checkOutTime, status,
                 0.0, 0.0, 0.0, date.getDayOfWeek() == DayOfWeek.SUNDAY);

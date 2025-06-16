@@ -128,6 +128,7 @@ public class ReelController {
         dto.setBarcodeId(reel.getBarcodeId());
         dto.setGsm(reel.getGsm());
         dto.setDeckle(reel.getDeckle());
+        dto.setPreviousWeight(reel.getPreviousWeight());
         dto.setBurstFactor(reel.getBurstFactor());
         dto.setInitialWeight(reel.getInitialWeight());
         dto.setCurrentWeight(reel.getCurrentWeight());

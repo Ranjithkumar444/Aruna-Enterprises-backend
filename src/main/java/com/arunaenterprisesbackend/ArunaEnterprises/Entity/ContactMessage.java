@@ -6,6 +6,7 @@ import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 
 @Entity
 @Table(name = "contact_messages")
@@ -27,8 +28,8 @@ public class ContactMessage {
     private String message;
 
     @CreationTimestamp
-    private LocalDateTime createdAt;
+    @Column(updatable = false)
+    private ZonedDateTime createdAt; // Changed from LocalDateTime
 
     private boolean replyStatus;
-
 }

@@ -20,4 +20,5 @@ public class ReelResponseDTO {
     private String SupplierName;
     private ReelStatus status;
     private String paperType;
+    private int previousWeight;
 }
