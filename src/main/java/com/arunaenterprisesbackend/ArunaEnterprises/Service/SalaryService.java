@@ -52,48 +52,48 @@ public class SalaryService {
     }
 
     @Transactional
-    public void calculateDerivedSalaryFields(Salary salary) {
-        double monthlyBaseSalary = salary.getMonthlyBaseSalary();
-        int workingDays = salary.getWorkingDays();
-        double otMultiplierFactor = salary.getOtMultiplierFactor();
+public void calculateDerivedSalaryFields(Salary salary) {
+    double monthlyBaseSalary = salary.getMonthlyBaseSalary();
+    int workingDays = salary.getWorkingDays();
+    double otMultiplierFactor = salary.getOtMultiplierFactor();
 
-        ZonedDateTime nowInIST = ZonedDateTime.now(IST_ZONE);
+    double oneDaySalary;
+    double regularHoursPerDay;
 
-        double oneDaySalary;
-        double regularHoursPerDay;
-
-        if (workingDays == 26) {
-            oneDaySalary = monthlyBaseSalary / 26.0;
-            regularHoursPerDay = 12.0;
-        } else if (workingDays == 30) {
-            YearMonth yearMonth = YearMonth.of(salary.getYear(), salary.getMonth());
-            int daysInMonth = yearMonth.lengthOfMonth();
-            oneDaySalary = monthlyBaseSalary / daysInMonth;
-            regularHoursPerDay = 8.0;
-        } else {
-            throw new IllegalArgumentException("Invalid number of working days: " + workingDays);
-        }
-
-        double oneHourSalary = oneDaySalary / regularHoursPerDay;
-        double otPerHour = oneHourSalary * otMultiplierFactor;
-
-        salary.setOneDaySalary(oneDaySalary);
-        salary.setRegularHoursPerDay(regularHoursPerDay);
-        salary.setOneHourSalary(oneHourSalary);
-        salary.setOtPerHour(otPerHour);
-
-        List<LocalDate> sundays = getSundaysInMonth(
-                salary.getYear(),
-                salary.getMonth(),
-                nowInIST.toLocalDate()
-        );
-        double sundaySalary = salary.getOneDaySalary() * sundays.size();
-
-        if (salary.getWorkingDays() == 30) {
-            salary.setTotalSalaryThisMonth(sundaySalary);
-        }
+    if (workingDays == 26) {
+        oneDaySalary = monthlyBaseSalary / 26.0;
+        regularHoursPerDay = 12.0;
+    } else if (workingDays == 30) {
+        YearMonth yearMonth = YearMonth.of(salary.getYear(), salary.getMonth());
+        int daysInMonth = yearMonth.lengthOfMonth();
+        oneDaySalary = monthlyBaseSalary / daysInMonth;
+        regularHoursPerDay = 8.0;
+    } else {
+        throw new IllegalArgumentException("Invalid number of working days: " + workingDays);
     }
 
+    double oneHourSalary = oneDaySalary / regularHoursPerDay;
+    double otPerHour = oneHourSalary * otMultiplierFactor;
+
+    salary.setOneDaySalary(oneDaySalary);
+    salary.setRegularHoursPerDay(regularHoursPerDay);
+    salary.setOneHourSalary(oneHourSalary);
+    salary.setOtPerHour(otPerHour);
+
+    // Calculate Sunday salary only if workingDays is 30
+    if (workingDays == 30) {
+        ZonedDateTime nowInIST = ZonedDateTime.now(IST_ZONE);
+        List<LocalDate> sundays = getSundaysInMonth(
+            salary.getYear(),
+            salary.getMonth(),
+            nowInIST.toLocalDate()
+        );
+        double sundaySalary = oneDaySalary * sundays.size();
+        salary.setTotalSalaryThisMonth(sundaySalary);
+    }
+}
+
+    
     public List<SalaryResponseDTO> getCurrentMonthSalaryForAllEmployees() {
         YearMonth currentMonth = YearMonth.now(IST_ZONE);
         int month = currentMonth.getMonthValue();

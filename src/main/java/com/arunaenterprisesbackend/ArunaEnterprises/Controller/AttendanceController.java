@@ -1,6 +1,5 @@
 package com.arunaenterprisesbackend.ArunaEnterprises.Controller;
 
-
 import com.arunaenterprisesbackend.ArunaEnterprises.DTO.AttendanceResponseDTO;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Attendance;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Employee;
@@ -18,6 +17,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+
 @RestController
 @RequestMapping("/admin")
 public class AttendanceController {
@@ -29,7 +29,6 @@ public class AttendanceController {
 
     @Autowired
     private AttendanceRepository attendanceRepository;
-
 
     @GetMapping("/attendance-list")
     public ResponseEntity<List<AttendanceResponseDTO>> getAttendanceByDate(
@@ -86,5 +85,4 @@ public class AttendanceController {
         System.out.println("UTC Time: " + ZonedDateTime.now(ZoneOffset.UTC));
         System.out.println("IST Time: " + ZonedDateTime.now(ZoneOffset.UTC).withZoneSameInstant(ZoneId.of("Asia/Kolkata")));
     }
-
 }
