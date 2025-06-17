@@ -2,10 +2,7 @@ package com.arunaenterprisesbackend.ArunaEnterprises.DTO;
 
 import lombok.*;
 
-import java.time.DayOfWeek;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZonedDateTime;
+import java.time.*;
 
 @Data
 @AllArgsConstructor
@@ -27,7 +24,10 @@ public class AttendanceResponseDTO {
     public AttendanceResponseDTO(String name, String barcodeId, LocalDate date,
                                  ZonedDateTime checkInTime, ZonedDateTime checkOutTime,
                                  String status) {
-        this(name, barcodeId, date, checkInTime, checkOutTime, status,
-                0.0, 0.0, 0.0, date.getDayOfWeek() == DayOfWeek.SUNDAY);
+        this(name, barcodeId, date,
+                checkInTime != null ? checkInTime.withZoneSameInstant(ZoneId.of("Asia/Kolkata")) : null,
+                checkOutTime != null ? checkOutTime.withZoneSameInstant(ZoneId.of("Asia/Kolkata")) : null,
+                status, 0.0, 0.0, 0.0,
+                date.getDayOfWeek() == DayOfWeek.SUNDAY);
     }
 }
