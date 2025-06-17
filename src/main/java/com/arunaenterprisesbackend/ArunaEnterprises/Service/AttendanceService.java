@@ -16,6 +16,7 @@ import java.time.*;
 @Service
 public class AttendanceService {
 
+    private static final ZoneId UTC_ZONE = ZoneOffset.UTC;
     private static final ZoneId IST_ZONE = ZoneId.of("Asia/Kolkata");
 
     @Autowired
@@ -38,10 +39,8 @@ public class AttendanceService {
             throw new IllegalArgumentException("No employee found with barcode ID: " + barcodeId);
         }
 
-        ZonedDateTime nowInIST = ZonedDateTime.now(ZoneOffset.UTC)
-                .withZoneSameInstant(IST_ZONE);
-        LocalDate today = nowInIST.toLocalDate();
-        LocalTime currentTime = nowInIST.toLocalTime();
+        ZonedDateTime nowUtc = ZonedDateTime.now(UTC_ZONE); // ✅ use UTC
+        LocalDate today = nowUtc.withZoneSameInstant(IST_ZONE).toLocalDate();
 
         boolean isSunday = today.getDayOfWeek() == DayOfWeek.SUNDAY;
         Attendance attendance = attendanceRepository.findByEmployeeAndDate(employee, today);
@@ -58,7 +57,7 @@ public class AttendanceService {
             attendance.setEmployee(employee);
             attendance.setDate(today);
             attendance.setBarcodeId(barcodeId);
-            attendance.setCheckInTime(nowInIST);
+            attendance.setCheckInTime(nowUtc);
             attendance.setCheckedIn(true);
             attendance.setSunday(isSunday);
 
@@ -83,7 +82,7 @@ public class AttendanceService {
                 throw new IllegalStateException("Cannot check out, check-in time is missing for attendance record ID: " + attendance.getId());
             }
 
-            attendance.setCheckOutTime(nowInIST);
+            attendance.setCheckOutTime(nowUtc);
             attendance.setCheckedIn(false);
             calculateDailySalary(employee, attendance);
 

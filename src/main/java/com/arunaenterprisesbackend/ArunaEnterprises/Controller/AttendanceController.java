@@ -6,14 +6,13 @@ import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Attendance;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Employee;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.AttendanceRepository;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.EmployeeRepository;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.DayOfWeek;
-import java.time.LocalDate;
-import java.time.ZoneId;
+import java.time.*;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -79,4 +78,13 @@ public class AttendanceController {
 
         return ResponseEntity.ok(response);
     }
+
+    @PostConstruct
+    public void logTimeZone() {
+        System.out.println("System Zone: " + ZoneId.systemDefault());
+        System.out.println("ZonedDateTime.now(): " + ZonedDateTime.now());
+        System.out.println("UTC Time: " + ZonedDateTime.now(ZoneOffset.UTC));
+        System.out.println("IST Time: " + ZonedDateTime.now(ZoneOffset.UTC).withZoneSameInstant(ZoneId.of("Asia/Kolkata")));
+    }
+
 }
