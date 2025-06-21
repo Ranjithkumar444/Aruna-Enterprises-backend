@@ -243,6 +243,7 @@ public class PublicController {
             orderReelUsage.setWeightConsumed(orderReelUsage.getWeightConsumed() + usedWeightKg);
             orderReelUsage.setRecordedBy(calculationDTO.getScannedBy());
             orderReelUsage.setHowManyBox(calculationDTO.getNoOfBoxMade());
+            orderReelUsage.setPreviousWeight(reel.getPreviousWeight());
             orderReelUsageRepository.save(orderReelUsage);
 
             ReelUsageHistory reelUsageHistory = new ReelUsageHistory();

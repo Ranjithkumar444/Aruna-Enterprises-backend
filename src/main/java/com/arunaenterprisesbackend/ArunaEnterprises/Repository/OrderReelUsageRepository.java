@@ -11,6 +11,8 @@ import java.util.Optional;
 public interface OrderReelUsageRepository extends JpaRepository<OrderReelUsage,Long> {
     Optional<OrderReelUsage> findByReelBarcodeId(String barcodeId);
 
+    List<OrderReelUsage> findByReelId(Long reelId);
+
     Optional<OrderReelUsage> findByReelBarcodeIdAndCourgationOutIsNull(String barcodeId);
 
     // New methods to return multiple results
