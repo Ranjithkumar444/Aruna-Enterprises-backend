@@ -41,4 +41,6 @@ public class OrderReelUsage {
     private String usageType;
 
     private int howManyBox;
+
+    private int previousWeight;
 }

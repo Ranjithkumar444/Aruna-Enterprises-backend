@@ -1,6 +1,7 @@
 package com.arunaenterprisesbackend.ArunaEnterprises.Controller;
 
 import com.arunaenterprisesbackend.ArunaEnterprises.DTO.*;
+import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Order;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.OrderReelUsage;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Reel;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.ReelStatus;
@@ -211,6 +212,48 @@ public class ReelController {
 
         return response;
     }
+    @GetMapping("/inventory/getInUseReelsWithDetails")
+    public ResponseEntity<List<ReelWithUsageDetailsDTO>> getInUseReelsWithDetails() {
+        List<Reel> reels = reelRepository.findByStatusIn(List.of(ReelStatus.IN_USE));
+
+        List<ReelWithUsageDetailsDTO> response = reels.stream().map(reel -> {
+            ReelWithUsageDetailsDTO dto = new ReelWithUsageDetailsDTO();
+
+            dto.setBarcodeId(reel.getBarcodeId());
+            dto.setReelNo(reel.getReelNo());
+            dto.setInitialWeight(reel.getInitialWeight());
+            dto.setCurrentWeight(reel.getCurrentWeight());
+            dto.setPreviousWeight(reel.getPreviousWeight());
+            dto.setPaperType(reel.getPaperType());
+            dto.setGsm(reel.getGsm());
+            dto.setBurstFactor(reel.getBurstFactor());
+            dto.setDeckle(reel.getDeckle());
+
+            List<OrderReelUsage> usages = orderReelUsageRepository.findByReelId(reel.getId());
+            List<OrderUsageDetailsDTO> usageDTOs = usages.stream().map(usage -> {
+                OrderUsageDetailsDTO usageDTO = new OrderUsageDetailsDTO();
+                Order order = usage.getOrder();
+
+                usageDTO.setClient(order.getClient());
+                usageDTO.setProductType(order.getProductType());
+                usageDTO.setQuantity(order.getQuantity());
+                usageDTO.setSize(order.getSize());
+                usageDTO.setUnit(order.getUnit());
+                usageDTO.setWeightConsumed(usage.getWeightConsumed());
+                usageDTO.setCourgationIn(usage.getCourgationIn());
+                usageDTO.setCourgationOut(usage.getCourgationOut());
+                usageDTO.setHowManyBox(usage.getHowManyBox());
+
+                return usageDTO;
+            }).collect(Collectors.toList());
+
+            dto.setOrderUsages(usageDTOs);
+            return dto;
+        }).collect(Collectors.toList());
+
+        return ResponseEntity.ok(response);
+    }
+
 
 }
 

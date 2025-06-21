@@ -2,6 +2,7 @@ package com.arunaenterprisesbackend.ArunaEnterprises.Controller;
 
 import com.arunaenterprisesbackend.ArunaEnterprises.DTO.EmployeeRegister;
 import com.arunaenterprisesbackend.ArunaEnterprises.DTO.EmployeeRegisterResponse;
+import com.arunaenterprisesbackend.ArunaEnterprises.DTO.EmployeeResponseDTO;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Employee;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.EmployeeRepository;
 import com.arunaenterprisesbackend.ArunaEnterprises.Service.EmployeeService;
@@ -145,5 +146,21 @@ public class EmployeeController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error deactivating employee: " + e.getMessage());
         }
+    }
+
+    @PostMapping("/employee/getEmployeeNameAndUnit")
+    public ResponseEntity<?> getEmployeeDetails(String barcodeId){
+        Employee employee = employeeRepository.findByBarcodeId(barcodeId);
+
+        if(employee == null){
+            return ResponseEntity.badRequest().body("Employee Not Found");
+        }
+
+        EmployeeResponseDTO employeeResponseDTO = new EmployeeResponseDTO();
+
+        employeeResponseDTO.setEmployeeName(employee.getName());
+        employeeResponseDTO.setUnit(employee.getUnit());
+
+        return ResponseEntity.ok(employeeResponseDTO);
     }
 }
