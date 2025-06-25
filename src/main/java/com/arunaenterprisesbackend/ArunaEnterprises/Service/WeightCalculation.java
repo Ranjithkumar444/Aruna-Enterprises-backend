@@ -1,6 +1,7 @@
 package com.arunaenterprisesbackend.ArunaEnterprises.Service;
 
 import com.arunaenterprisesbackend.ArunaEnterprises.DTO.CalculationDTO;
+import com.arunaenterprisesbackend.ArunaEnterprises.DTO.PunchingBoxDTO;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -43,5 +44,31 @@ public class WeightCalculation {
 
         double totalWeight = weightPerBox * numberOfBoxes;
         return totalWeight;
+    }
+
+    public double calculatePunchingWeight(PunchingBoxDTO dto, String paperType) {
+        int deckle = dto.getDeckle();
+        int length = dto.getCuttingLength();
+        int gsm = dto.getGsm();
+        int sheets = dto.getNoOfSheets();
+
+        double weightPerSheetGrams;
+
+        switch (paperType.toLowerCase()) {
+            case "liner":
+            case "top":
+                weightPerSheetGrams = deckle * length * gsm / 10_000_000.0;
+                break;
+            case "flute":
+                weightPerSheetGrams = deckle * length * gsm * 1.5 / 10_000_000.0;
+                break;
+            case "flutee":
+                weightPerSheetGrams = deckle * length * gsm * 1.75 / 10_000_000.0;
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported paper type: " + paperType);
+        }
+
+        return (weightPerSheetGrams * sheets);
     }
 }

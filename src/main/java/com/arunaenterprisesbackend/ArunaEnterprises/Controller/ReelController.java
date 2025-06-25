@@ -13,10 +13,13 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -83,11 +86,9 @@ public class ReelController {
     public ResponseEntity<?> getBarcodeimage(@PathVariable String id) {
         Reel reel;
         try {
-            // Try to parse as Long first (for reelNo)
             Long reelNo = Long.valueOf(id);
             reel = reelRepository.findByReelNo(reelNo);
         } catch (NumberFormatException e) {
-            // If not a number, search by barcodeId
             reel = reelRepository.findByBarcodeId(id);
         }
 
@@ -113,11 +114,9 @@ public class ReelController {
     public ResponseEntity<ReelResponseDTO> getReelFullDetails(@PathVariable String id) {
         Reel reel;
         try {
-            // Try to parse as Long first (for reelNo)
             Long reelNo = Long.valueOf(id);
             reel = reelRepository.findByReelNo(reelNo);
         } catch (NumberFormatException e) {
-            // If not a number, search by barcodeId
             reel = reelRepository.findByBarcodeId(id);
         }
 
@@ -141,17 +140,28 @@ public class ReelController {
         return ResponseEntity.ok(dto);
     }
 
-    @GetMapping("/reel/orderReelUsage/{barcodeId}")
-    public ResponseEntity<?> getAllOrderReelUsageByBarcode(@PathVariable String barcodeId) {
+    @GetMapping("/reel/orderReelUsage/{code}")
+    public ResponseEntity<?> getAllOrderReelUsageByCode(@PathVariable String code) {
         try {
-            List<OrderReelUsage> usages = orderReelUsageRepository.findAllByReelBarcodeId(barcodeId);
+            List<OrderReelUsage> usages;
+
+            usages = orderReelUsageRepository.findAllByReelBarcodeId(code);
 
             if (usages.isEmpty()) {
-                return ResponseEntity.notFound().build();
+                try {
+                    Long reelNo = Long.parseLong(code);
+                    usages = orderReelUsageRepository.findAllByReelReelNo(reelNo);
+                } catch (NumberFormatException ignored) {
+                }
+            }
+
+            if (usages == null || usages.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("No usage history found for code: " + code);
             }
 
             OrderReelUsageListResponseDTO response = new OrderReelUsageListResponseDTO();
-            response.setBarcodeId(barcodeId);
+            response.setBarcodeId(code);
             response.setUsages(usages.stream()
                     .map(this::mapToResponseDTO)
                     .collect(Collectors.toList()));
@@ -254,6 +264,92 @@ public class ReelController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/inventory/manipulateReelData")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ResponseEntity<?> manipulateReel(@RequestBody ReelManipulationRequest request) {
+        try {
+            String searchTerm = request.getReelNoOrBarcodeId().trim();
 
+            Reel existingReel = findReelByAnyIdentifier(searchTerm);
+
+            if (existingReel == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(createErrorResponse("Reel not found for identifier: " + searchTerm));
+            }
+
+            updateReelFields(existingReel, request);
+
+            Reel savedReel = reelRepository.save(existingReel);
+
+            return ResponseEntity.ok(createSuccessResponse(savedReel));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(createErrorResponse("Error manipulating reel: " + (e.getMessage() != null ? e.getMessage() : "Unknown error")));
+        }
+    }
+
+    private Reel findReelByAnyIdentifier(String searchTerm) {
+        Reel reel = reelRepository.findByBarcodeId(searchTerm);
+        if (reel != null) return reel;
+
+        reel = reelRepository.findByBarcodeIdIgnoreCase(searchTerm);
+        if (reel != null) return reel;
+
+        try {
+            Long reelNo = Long.parseLong(searchTerm);
+            reel = reelRepository.findByReelNo(reelNo);
+            if (reel != null) return reel;
+
+            reel = reelRepository.findByBarcodeIdOrReelNo(searchTerm, reelNo);
+            if (reel != null) return reel;
+        } catch (NumberFormatException ignored) {}
+
+        List<Reel> reels = reelRepository.findByBarcodeIdContainingIgnoreCase(searchTerm);
+        if (!reels.isEmpty()) {
+            return reels.get(0);
+        }
+        return null;
+    }
+
+    private void updateReelFields(Reel reel, ReelManipulationRequest request) {
+        if (request.getInitialWeight() != 0) {
+            reel.setInitialWeight(request.getInitialWeight());
+        }
+        if (request.getCurrentWeight() != 0) {
+            reel.setCurrentWeight(request.getCurrentWeight());
+        }
+        if (request.getPreviousWeight() != null) {
+            reel.setPreviousWeight(request.getPreviousWeight());
+        }
+        if (request.getUnit() != null && !request.getUnit().trim().isEmpty()) {
+            reel.setUnit(request.getUnit());
+        }
+        if (request.getStatus() != null) {
+            reel.setStatus(request.getStatus());
+        }
+    }
+
+    private Map<String, Object> createSuccessResponse(Reel reel) {
+        return Map.of(
+                "status", "success",
+                "message", "Reel updated successfully",
+                "data", Map.of(
+                        "id", reel.getId(),
+                        "barcodeId", reel.getBarcodeId(),
+                        "reelNo", reel.getReelNo(),
+                        "currentWeight", reel.getCurrentWeight(),
+                        "status", reel.getStatus()
+                )
+        );
+    }
+
+    private Map<String, Object> createErrorResponse(String message) {
+        return Map.of(
+                "status", "error",
+                "message", message,
+                "timestamp", LocalDateTime.now()
+        );
+    }
 }
 
