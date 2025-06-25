@@ -1,10 +1,7 @@
 package com.arunaenterprisesbackend.ArunaEnterprises.Controller;
 
 
-import com.arunaenterprisesbackend.ArunaEnterprises.DTO.Barcode;
-import com.arunaenterprisesbackend.ArunaEnterprises.DTO.BarcodeDTO;
-import com.arunaenterprisesbackend.ArunaEnterprises.DTO.CalculationDTO;
-import com.arunaenterprisesbackend.ArunaEnterprises.DTO.ContactDTO;
+import com.arunaenterprisesbackend.ArunaEnterprises.DTO.*;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.*;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.OrderReelUsage;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.*;
@@ -266,6 +263,84 @@ public class PublicController {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("An internal error occurred: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/inventory/punching/reelWeightCalculation")
+    public ResponseEntity<String> punchingBoxWeightCalculation(@RequestBody PunchingBoxDTO dto) {
+        try {
+            String barcodeId = dto.getBarcodeId().trim();
+
+            Reel reel = reelRepository.findByBarcodeId(barcodeId);
+            if (reel == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("Reel not found for barcode ID: " + barcodeId);
+            }
+
+            if (reel.getStatus() != ReelStatus.IN_USE) {
+                return ResponseEntity.badRequest()
+                        .body("Reel " + barcodeId + " is not currently IN_USE.");
+            }
+
+            Optional<OrderReelUsage> optionalOrderReelUsage =
+                    orderReelUsageRepository.findByReelBarcodeIdAndCourgationOutIsNull(barcodeId);
+
+            OrderReelUsage orderReelUsage = optionalOrderReelUsage.orElseThrow(() ->
+                    new IllegalStateException("No active OrderReelUsage found for reel " + barcodeId)
+            );
+
+            String paperType = reel.getReelSet().toLowerCase().trim();
+
+            double totalWeightGrams = weightCalculation.calculatePunchingWeight(dto, paperType);
+            double usedWeightKg = totalWeightGrams / 1000.0;
+
+            reel.setPreviousWeight(reel.getCurrentWeight());
+            int currentWeight = (int) (reel.getCurrentWeight() - usedWeightKg);
+            reel.setCurrentWeight(currentWeight);
+
+            if (currentWeight <= 10) {
+                reel.setStatus(ReelStatus.USE_COMPLETED);
+            } else {
+                reel.setStatus(ReelStatus.PARTIALLY_USED_AVAILABLE);
+            }
+            reelRepository.save(reel);
+
+            Order associatedOrder = orderReelUsage.getOrder();
+            if ("yes".equalsIgnoreCase(dto.getOrderCompleted())) {
+                associatedOrder.setStatus(OrderStatus.COMPLETED);
+            } else if (associatedOrder.getStatus() == OrderStatus.TODO) {
+                associatedOrder.setStatus(OrderStatus.IN_PROGRESS);
+            }
+            orderRepository.save(associatedOrder);
+
+            orderReelUsage.setWeightConsumed(orderReelUsage.getWeightConsumed() + usedWeightKg);
+            orderReelUsage.setRecordedBy(dto.getRecordedBy());
+            orderReelUsage.setPreviousWeight(reel.getPreviousWeight());
+            orderReelUsage.setCourgationOut(ZonedDateTime.now(IST_ZONE));
+            orderReelUsageRepository.save(orderReelUsage);
+
+            ReelUsageHistory history = new ReelUsageHistory();
+            history.setBarcodeId(barcodeId);
+            history.setReelSet(reel.getReelSet());
+            history.setUsedWeight(usedWeightKg);
+            history.setUsedAt(ZonedDateTime.now(IST_ZONE));
+            history.setBoxDetails(String.format("Punching Sheets: %d (%s)", dto.getNoOfSheets(), paperType));
+            history.setUsedBy(dto.getRecordedBy());
+            reelUsageHistoryRepository.save(history);
+
+            return ResponseEntity.ok(String.format(
+                    "Used %.2f kg from reel %s [%s]. Remaining weight: %d kg. Order %s status: %s.",
+                    usedWeightKg, barcodeId, paperType, currentWeight,
+                    associatedOrder.getId(), associatedOrder.getStatus()
+            ));
+
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Error: " + e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Internal server error: " + e.getMessage());
         }
     }
 

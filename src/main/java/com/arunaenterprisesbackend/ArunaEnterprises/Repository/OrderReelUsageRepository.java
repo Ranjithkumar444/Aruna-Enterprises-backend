@@ -15,7 +15,8 @@ public interface OrderReelUsageRepository extends JpaRepository<OrderReelUsage,L
 
     Optional<OrderReelUsage> findByReelBarcodeIdAndCourgationOutIsNull(String barcodeId);
 
-    // New methods to return multiple results
     List<OrderReelUsage> findAllByReelBarcodeId(String barcodeId);
     List<OrderReelUsage> findAllByReelBarcodeIdAndCourgationOutIsNull(String barcodeId);
+    List<OrderReelUsage> findAllByReelReelNo(Long reelNo);
+
 }
