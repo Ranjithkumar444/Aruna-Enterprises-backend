@@ -52,23 +52,20 @@ public class WeightCalculation {
         int gsm = dto.getGsm();
         int sheets = dto.getNoOfSheets();
 
-        double weightPerSheetGrams;
+        double multiplier;
 
-        switch (paperType.toLowerCase()) {
-            case "liner":
-            case "top":
-                weightPerSheetGrams = deckle * length * gsm / 10_000_000.0;
-                break;
-            case "flute":
-                weightPerSheetGrams = deckle * length * gsm * 1.5 / 10_000_000.0;
-                break;
-            case "flutee":
-                weightPerSheetGrams = deckle * length * gsm * 1.75 / 10_000_000.0;
-                break;
-            default:
-                throw new IllegalArgumentException("Unsupported paper type: " + paperType);
+        paperType = paperType.toLowerCase().trim();
+
+        if (paperType.equals("liner") || paperType.equals("cutting")) {
+            multiplier = 1.0;
+        } else if (paperType.equals("flute")) {
+            multiplier = 1.5;
+        } else {
+            multiplier = 1.75;
         }
 
-        return (weightPerSheetGrams * sheets);
+        double weightPerSheetGrams = (deckle * length * gsm * multiplier) / 10_000.0;
+
+        return weightPerSheetGrams * sheets;
     }
 }
