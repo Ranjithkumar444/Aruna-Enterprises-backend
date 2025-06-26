@@ -28,7 +28,7 @@ public class OrderService {
             order1.setStatus(OrderStatus.TODO);
             order1.setDeliveryAddress(order.getDeliveryAddress());
             order1.setQuantity(order.getQuantity());
-            order1.setExpectedCompletionDate(order.getExpectedCompletionDate()); // assumed already in correct format
+            order1.setExpectedCompletionDate(order.getExpectedCompletionDate());
             order1.setProductType(order.getProductType());
             order1.setMaterialGrade(order.getMaterialGrade());
             order1.setUpdatedAt(ZonedDateTime.now(IST_ZONE));
