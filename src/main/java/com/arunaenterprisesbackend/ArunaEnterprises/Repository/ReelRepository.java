@@ -28,4 +28,11 @@ public interface ReelRepository extends JpaRepository<Reel, Long> {
 
     List<Reel> findByBarcodeIdContainingIgnoreCase(@Param("searchTerm") String searchTerm);
 
+    @Query("SELECT r FROM Reel r WHERE r.gsm = :gsm AND r.deckle = :deckle AND r.status IN :statuses ORDER BY r.currentWeight ASC")
+    List<Reel> findAvailableByGsmAndDeckleSorted(
+            @Param("gsm") int gsm,
+            @Param("deckle") int deckle,
+            @Param("statuses") List<ReelStatus> statuses
+    );
+
 }

@@ -13,13 +13,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 
 @RestController
@@ -31,6 +31,9 @@ public class PublicController {
 
     @Autowired
     private IndustryRepository industryRepository;
+
+    @Autowired
+    private OrderService orderService;
 
     @Autowired
     private EmployeeRepository employeeRepository;
@@ -60,13 +63,13 @@ public class PublicController {
     private BoxDetailsRepository boxDetailsRepository;
 
     @Autowired
-    private OrderService orderService;
-
-    @Autowired
     private OrderRepository orderRepository;
 
     @Autowired
     private OrderReelUsageRepository orderReelUsageRepository;
+
+    @Autowired
+    private SuggestedReelRepository suggestedReelRepository;
 
     @GetMapping("/greet")
     public String HelloController(){
@@ -191,7 +194,11 @@ public class PublicController {
     @PostMapping("/inventory/reelWeightCalculation")
     public ResponseEntity<String> calculateWeight(@RequestBody CalculationDTO calculationDTO) {
         try {
-            String barcodeId = calculationDTO.getBarcodeId().trim();
+            String rawBarcode = calculationDTO.getBarcodeId();
+            if (rawBarcode == null || rawBarcode.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("❌ Barcode ID must not be null or empty.");
+            }
+            String barcodeId = rawBarcode.trim();
 
             Reel reel = reelRepository.findByBarcodeId(barcodeId);
             if (reel == null) {
@@ -267,9 +274,13 @@ public class PublicController {
     }
 
     @PostMapping("/inventory/punching/reelWeightCalculation")
-    public ResponseEntity<String> punchingBoxWeightCalculation(@RequestBody PunchingBoxDTO dto) {
+    public ResponseEntity<String> punchingBoxWeightCalculation(@Valid @RequestBody PunchingBoxDTO dto) {
         try {
-            String barcodeId = dto.getBarcodeId().trim();
+            String rawBarcode = dto.getBarcodeId();
+            if (rawBarcode == null || rawBarcode.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("❌ Barcode ID must not be null or empty.");
+            }
+            String barcodeId = rawBarcode.trim();
 
             Reel reel = reelRepository.findByBarcodeId(barcodeId);
             if (reel == null) {
@@ -344,6 +355,8 @@ public class PublicController {
         }
     }
 
+
+
     @GetMapping("/box/getAllBoxDetails")
     public ResponseEntity<List<Box>> getAllDetilsOfBox(){
         try{
@@ -373,8 +386,67 @@ public class PublicController {
                 OrderStatus.TODO,
                 OrderStatus.IN_PROGRESS
         );
+
+        // Fetch TODO, IN_PROGRESS, COMPLETED orders
+        List<Order> activeOrders = orderRepository.findByStatusIn(activeStatuses);
+
+        // Get current time in Central US time zone
+        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("America/Chicago"));
+        ZonedDateTime cutoff = now.minusDays(1);
+
+        // Fetch SHIPPED orders shipped within last 24 hours
+        List<Order> recentShippedOrders = orderRepository.findByStatusAndShippedAtAfter(
+                OrderStatus.SHIPPED,
+                cutoff
+        );
+
+        // Merge both lists
+        activeOrders.addAll(recentShippedOrders);
+
+        return ResponseEntity.ok(activeOrders);
+    }
+
+    @GetMapping("/order/getOrderWhichInTodoAndInProgress")
+    public ResponseEntity<List<Order>> GetOrdersByToDoAndInprogres() {
+        List<OrderStatus> activeStatuses = Arrays.asList(
+                OrderStatus.TODO,
+                OrderStatus.IN_PROGRESS
+        );
         List<Order> orders = orderRepository.findByStatusIn(activeStatuses);
         return ResponseEntity.ok(orders);
+    }
+
+//    @PostMapping("/order/reel/suggestedReels")
+//    public ResponseEntity<List<SuggestedReelDTO>> suggestedReel(@RequestBody long orderId) {
+//
+//        Optional<Order> orderOpt = orderRepository.findById(orderId);
+//        if (orderOpt.isEmpty()) {
+//            return ResponseEntity.badRequest().build();
+//        }
+//
+//        Order order = orderOpt.get();
+//
+//        String normalizedClient = order.getNormalizedClient();
+//        if (normalizedClient == null || normalizedClient.isBlank()) {
+//            normalizedClient = order.getClient().toLowerCase().replaceAll("[^a-z0-9]", "");
+//        }
+//
+//        String size = order.getSize();
+//
+//        Optional<SuggestedReel> suggestedOrder = suggestedReelRepository.findByClientNormalizerAndSize(normalizedClient,size);
+//
+//
+//
+//    }
+
+    @GetMapping("/order/{orderId}/suggested-reels")
+    public ResponseEntity<?> getSuggestedReels(@PathVariable Long orderId) {
+        try {
+            SuggestedReelsResponseDTO response = orderService.getSuggestedReels(orderId);
+            return ResponseEntity.ok(response);
+        } catch (Exception e){
+            return ResponseEntity.badRequest().body(e);
+        }
     }
 
 }

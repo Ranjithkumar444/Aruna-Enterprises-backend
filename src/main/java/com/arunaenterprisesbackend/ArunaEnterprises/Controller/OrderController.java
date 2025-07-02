@@ -1,18 +1,24 @@
 package com.arunaenterprisesbackend.ArunaEnterprises.Controller;
 
 import com.arunaenterprisesbackend.ArunaEnterprises.DTO.OrderDTO;
+import com.arunaenterprisesbackend.ArunaEnterprises.DTO.SuggestedReelsResponseDTO;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Order;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.OrderReelUsage;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.OrderStatus;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.OrderReelUsageRepository;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.OrderRepository;
 import com.arunaenterprisesbackend.ArunaEnterprises.Service.OrderService;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -30,15 +36,19 @@ public class OrderController {
     private OrderReelUsageRepository orderReelUsageRepository;
 
     @PostMapping("/order/create-order")
-    public ResponseEntity<String> createOrderCnt(@RequestBody OrderDTO order) {
+    public ResponseEntity<SuggestedReelsResponseDTO> createOrderCnt(@RequestBody OrderDTO order) {
         try {
-            String result = orderservice.createOrder(order);
-            return ResponseEntity.ok(result);
+            SuggestedReelsResponseDTO response = orderservice.createOrder(order);
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to create order: " + e.getMessage());
+            SuggestedReelsResponseDTO errorResponse = new SuggestedReelsResponseDTO();
+            errorResponse.setMessage("Failed to create order: " + e.getMessage());
+            errorResponse.setTopGsmReels(Collections.emptyList());
+            errorResponse.setBottomGsmReels(Collections.emptyList());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
+
 
     @PutMapping("/order/{id}/status")
     public ResponseEntity<String> updateOrderStatus(
@@ -69,9 +79,47 @@ public class OrderController {
                 OrderStatus.IN_PROGRESS,
                 OrderStatus.COMPLETED
         );
-        List<Order> orders = orderRepository.findByStatusIn(activeStatuses);
-        return ResponseEntity.ok(orders);
+
+        // Fetch TODO, IN_PROGRESS, COMPLETED orders
+        List<Order> activeOrders = orderRepository.findByStatusIn(activeStatuses);
+
+        // Get current time in Central US time zone
+        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("America/Chicago"));
+        ZonedDateTime cutoff = now.minusDays(1);
+
+        // Fetch SHIPPED orders shipped within last 24 hours
+        List<Order> recentShippedOrders = orderRepository.findByStatusAndShippedAtAfter(
+                OrderStatus.SHIPPED,
+                cutoff
+        );
+
+        activeOrders.addAll(recentShippedOrders);
+
+        return ResponseEntity.ok(activeOrders);
     }
+
+    @GetMapping("/order/getOrdersToDoAndInProgress")
+    public ResponseEntity<List<Order>> GetOrdersByActiveStatus() {
+        List<OrderStatus> activeStatuses = Arrays.asList(
+                OrderStatus.TODO,
+                OrderStatus.IN_PROGRESS
+        );
+
+        List<Order> activeOrders = orderRepository.findByStatusIn(activeStatuses);
+
+        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("America/Chicago"));
+        ZonedDateTime cutoff = now.minusDays(1);
+
+        List<Order> recentShippedOrders = orderRepository.findByStatusAndShippedAtAfter(
+                OrderStatus.SHIPPED,
+                cutoff
+        );
+
+        activeOrders.addAll(recentShippedOrders);
+
+        return ResponseEntity.ok(activeOrders);
+    }
+
 
     @GetMapping("/order/getCompletedOrders")
     public ResponseEntity<List<Order>> getOrderCompletedOrders() {
@@ -87,5 +135,33 @@ public class OrderController {
         List<OrderReelUsage> listoforder = orderReelUsageRepository.findAll();
 
         return ResponseEntity.ok(listoforder);
+    }
+
+    @GetMapping("/order/{orderId}/suggested-reels")
+    public ResponseEntity<?> getSuggestedReels(@PathVariable Long orderId) {
+        try {
+            SuggestedReelsResponseDTO response = orderservice.getSuggestedReels(orderId);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return handleException(e);
+        }
+    }
+
+    private ResponseEntity<?> handleException(RuntimeException e) {
+        if (e.getMessage().contains("not found")) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ErrorResponse(e.getMessage()));
+        } else if (e.getMessage().contains("not available")) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ErrorResponse(e.getMessage()));
+        }
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse("An unexpected error occurred"));
+    }
+
+    @Data
+    @AllArgsConstructor
+    private static class ErrorResponse {
+        private String message;
     }
 }

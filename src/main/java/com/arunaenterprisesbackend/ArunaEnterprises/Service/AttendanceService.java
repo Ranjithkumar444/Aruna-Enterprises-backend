@@ -28,6 +28,9 @@ public class AttendanceService {
     @Autowired
     private SalaryRepository salaryRepository;
 
+    @Autowired
+    private SalaryService salaryService;
+
     @Transactional
     public String markAttendance(String barcodeId) {
         if (barcodeId == null || barcodeId.isEmpty()) {
@@ -48,7 +51,26 @@ public class AttendanceService {
                 employee, today.getMonthValue(), today.getYear());
 
         if (salary == null) {
-            throw new RuntimeException("Salary configuration missing for employee for " + today.getMonth() + " " + today.getYear());
+            Salary previousSalary = salaryRepository.findTopByEmployeeOrderByYearDescMonthDesc(employee);
+            if (previousSalary != null) {
+                salary = new Salary();
+                salary.setEmployee(employee);
+                salary.setMonthlyBaseSalary(previousSalary.getMonthlyBaseSalary());
+                salary.setWorkingDays(previousSalary.getWorkingDays());
+                salary.setOtMultiplierFactor(previousSalary.getOtMultiplierFactor());
+                salary.setMonth(today.getMonthValue());
+                salary.setYear(today.getYear());
+
+                // Recalculate derived fields (critical!)
+                salary.setOneDaySalary(previousSalary.getOneDaySalary());
+                salary.setRegularHoursPerDay(previousSalary.getRegularHoursPerDay());
+                salary.setOneHourSalary(previousSalary.getOneHourSalary());
+                salary.setOtPerHour(previousSalary.getOtPerHour());
+
+                salaryRepository.save(salary);
+            } else {
+                throw new RuntimeException("No previous salary found for employee: " + employee.getName());
+            }
         }
 
         if (attendance == null) {

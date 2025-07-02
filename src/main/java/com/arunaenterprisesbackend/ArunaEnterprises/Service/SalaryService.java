@@ -11,6 +11,7 @@ import com.arunaenterprisesbackend.ArunaEnterprises.Repository.EmployeeRepositor
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.SalaryRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.*;
@@ -57,8 +58,6 @@ public class SalaryService {
         int workingDays = salary.getWorkingDays();
         double otMultiplierFactor = salary.getOtMultiplierFactor();
 
-        ZonedDateTime nowInIST = ZonedDateTime.now(IST_ZONE);
-
         double oneDaySalary;
         double regularHoursPerDay;
 
@@ -82,17 +81,19 @@ public class SalaryService {
         salary.setOneHourSalary(oneHourSalary);
         salary.setOtPerHour(otPerHour);
 
-        List<LocalDate> sundays = getSundaysInMonth(
-                salary.getYear(),
-                salary.getMonth(),
-                nowInIST.toLocalDate()
-        );
-        double sundaySalary = salary.getOneDaySalary() * sundays.size();
-
-        if (salary.getWorkingDays() == 30) {
+        // Calculate Sunday salary only if workingDays is 30
+        if (workingDays == 30) {
+            ZonedDateTime nowInIST = ZonedDateTime.now(IST_ZONE);
+            List<LocalDate> sundays = getSundaysInMonth(
+                    salary.getYear(),
+                    salary.getMonth(),
+                    nowInIST.toLocalDate()
+            );
+            double sundaySalary = oneDaySalary * sundays.size();
             salary.setTotalSalaryThisMonth(sundaySalary);
         }
     }
+
 
     public List<SalaryResponseDTO> getCurrentMonthSalaryForAllEmployees() {
         YearMonth currentMonth = YearMonth.now(IST_ZONE);

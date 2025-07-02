@@ -13,6 +13,7 @@ import java.time.ZonedDateTime;
 public class OrderDTO {
     private String client;
     private String productType;
+    private String typeOfProduct;
     private int quantity;
     private String size;
     private String materialGrade;

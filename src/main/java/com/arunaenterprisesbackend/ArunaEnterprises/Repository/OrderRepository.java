@@ -6,13 +6,16 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.List;
 
 @Repository
 public interface OrderRepository extends JpaRepository<Order,Long> {
     List<Order> findByStatusIn(List<OrderStatus> statuses);
 
-
+    List<Order> findByStatusAndShippedAtAfter(OrderStatus status, ZonedDateTime cutoff);
 
     List<Order> findByStatusAndShippedAtBefore(OrderStatus orderStatus, LocalDateTime cutoff);
+
+    List<Order> findByNormalizedClient(String normalizedClient);
 }
