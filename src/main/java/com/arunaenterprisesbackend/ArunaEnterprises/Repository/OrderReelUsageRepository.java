@@ -1,5 +1,6 @@
 package com.arunaenterprisesbackend.ArunaEnterprises.Repository;
 
+import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Order;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.OrderReelUsage;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -18,5 +19,8 @@ public interface OrderReelUsageRepository extends JpaRepository<OrderReelUsage,L
     List<OrderReelUsage> findAllByReelBarcodeId(String barcodeId);
     List<OrderReelUsage> findAllByReelBarcodeIdAndCourgationOutIsNull(String barcodeId);
     List<OrderReelUsage> findAllByReelReelNo(Long reelNo);
+
+    List<OrderReelUsage> findByOrderIn(List<Order> orders);
+
 
 }

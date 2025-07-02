@@ -28,6 +28,8 @@ public class Order {
 
     private String productType;
 
+    private String typeOfProduct;
+
     private int quantity;
 
     private String size;
@@ -46,6 +48,8 @@ public class Order {
     @UpdateTimestamp
     private ZonedDateTime updatedAt;
 
+    private ZonedDateTime orderCreatedDate;
+
     private ZonedDateTime expectedCompletionDate;
 
     private String createdBy;
@@ -59,4 +63,7 @@ public class Order {
     private String unit;
 
     private String transportNumber;
+
+    @Column(name = "normalized_client")
+    private String normalizedClient;
 }
