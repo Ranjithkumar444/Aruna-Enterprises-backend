@@ -37,40 +37,52 @@ public class AttendanceController {
         List<Employee> employees = employeeRepository.findAll();
         List<Attendance> attendanceRecords = attendanceRepository.findByDate(date);
 
+        // ✅ Fix: handle duplicate barcode IDs safely
         Map<String, Attendance> attendanceMap = attendanceRecords.stream()
-                .collect(Collectors.toMap(Attendance::getBarcodeId, Function.identity()));
+                .collect(Collectors.toMap(
+                        Attendance::getBarcodeId,
+                        Function.identity(),
+                        (existing, duplicate) -> existing // keep the first one
+                ));
 
         List<AttendanceResponseDTO> response = employees.stream()
                 .map(employee -> {
-                    Attendance attendance = attendanceMap.get(employee.getBarcodeId());
-                    boolean isSunday = date.getDayOfWeek() == DayOfWeek.SUNDAY;
+                    try {
+                        Attendance attendance = attendanceMap.get(employee.getBarcodeId());
+                        boolean isSunday = date.getDayOfWeek() == DayOfWeek.SUNDAY;
 
-                    if (attendance != null) {
-                        return new AttendanceResponseDTO(
-                                employee.getName(),
-                                employee.getBarcodeId(),
-                                attendance.getDate(),
-                                attendance.getCheckInTime(),
-                                attendance.getCheckOutTime(),
-                                attendance.getStatus() != null ? attendance.getStatus().toString() : "OT_SUNDAY",
-                                attendance.getRegularHours(),
-                                attendance.getOvertimeHours(),
-                                attendance.getDaySalary(),
-                                isSunday
-                        );
-                    } else {
-                        return new AttendanceResponseDTO(
-                                employee.getName(),
-                                employee.getBarcodeId(),
-                                date,
-                                null,
-                                null,
-                                "ABSENT",
-                                0.0,
-                                0.0,
-                                0.0,
-                                isSunday
-                        );
+                        if (attendance != null) {
+                            return new AttendanceResponseDTO(
+                                    employee.getName(),
+                                    employee.getBarcodeId(),
+                                    attendance.getDate(),
+                                    attendance.getCheckInTime(),
+                                    attendance.getCheckOutTime(),
+                                    attendance.getStatus() != null ? attendance.getStatus().toString() : "UNKNOWN",
+                                    attendance.getRegularHours(),
+                                    attendance.getOvertimeHours(),
+                                    attendance.getDaySalary(),
+                                    isSunday
+                            );
+                        } else {
+                            return new AttendanceResponseDTO(
+                                    employee.getName(),
+                                    employee.getBarcodeId(),
+                                    date,
+                                    null,
+                                    null,
+                                    "ABSENT",
+                                    0.0,
+                                    0.0,
+                                    0.0,
+                                    isSunday
+                            );
+                        }
+                    } catch (Exception e) {
+                        // Log for debugging (optional)
+                        System.err.println("Error processing employee: " + employee.getBarcodeId());
+                        e.printStackTrace();
+                        throw e;
                     }
                 })
                 .collect(Collectors.toList());
