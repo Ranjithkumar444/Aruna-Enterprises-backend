@@ -52,7 +52,7 @@ public class AttendanceController {
                                 attendance.getDate(),
                                 attendance.getCheckInTime(),
                                 attendance.getCheckOutTime(),
-                                attendance.getStatus().toString(),
+                                attendance.getStatus() != null ? attendance.getStatus().toString() : "OT_SUNDAY",
                                 attendance.getRegularHours(),
                                 attendance.getOvertimeHours(),
                                 attendance.getDaySalary(),
