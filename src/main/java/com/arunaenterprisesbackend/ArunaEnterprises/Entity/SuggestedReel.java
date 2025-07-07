@@ -10,33 +10,23 @@ import javax.validation.constraints.AssertTrue;
 
 @Entity
 @Table(name = "suggested_reel")
-@Setter
 @Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class SuggestedReel {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
-    private String client;
-    private String clientNormalizer;
-    private String product;
-    private String size;
-    private String ply;
-    private int deckle;
-    private double cuttingLength;
-    private int topGsm;
-    private int bottomGsm;
-    private int linerGsm;
-    private int fluteGsm;
-    private String madeUpOf;
-    private String paperTypeTop;
-    private String paperTypeBottom;
+    @Id @GeneratedValue long id;
+    private String client, clientNormalizer, product, size, ply;
+    private double deckle, cuttingLength;
+    private int topGsm, bottomGsm, linerGsm, fluteGsm;
+    private String madeUpOf, paperTypeTop, paperTypeBottom;
+    private double oneUps, twoUps, threeUps, fourUps;
+    private String description;
+    private double sellingPricePerBox;
+    private double productionCostPerBox;
 
     @AssertTrue(message = "Flute GSM must be provided when different from liner")
     public boolean isFluteValid() {
-        return (linerGsm == fluteGsm) || (fluteGsm > 0);
+        return (linerGsm == fluteGsm) || fluteGsm > 0;
     }
 }
-

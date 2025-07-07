@@ -335,6 +335,7 @@ public class PublicController {
             history.setReelSet(reel.getReelSet());
             history.setUsedWeight(usedWeightKg);
             history.setUsedAt(ZonedDateTime.now(IST_ZONE));
+            history.setReelNo(reel.getReelNo());
             history.setBoxDetails(String.format("Punching Sheets: %d (%s)", dto.getNoOfSheets(), paperType));
             history.setUsedBy(dto.getRecordedBy());
             reelUsageHistoryRepository.save(history);

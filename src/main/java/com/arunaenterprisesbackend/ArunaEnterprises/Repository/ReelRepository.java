@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Repository
@@ -28,11 +29,24 @@ public interface ReelRepository extends JpaRepository<Reel, Long> {
 
     List<Reel> findByBarcodeIdContainingIgnoreCase(@Param("searchTerm") String searchTerm);
 
-    @Query("SELECT r FROM Reel r WHERE r.gsm = :gsm AND r.deckle = :deckle AND r.status IN :statuses ORDER BY r.currentWeight ASC")
-    List<Reel> findAvailableByGsmAndDeckleSorted(
-            @Param("gsm") int gsm,
-            @Param("deckle") int deckle,
+    @Query("SELECT r FROM Reel r WHERE r.deckle >= :minDeckle AND r.deckle <= :maxDeckle AND r.status IN :statuses")
+    List<Reel> findAvailableByDeckleRange(
+            @Param("minDeckle") int minDeckle, // Changed to int
+            @Param("maxDeckle") int maxDeckle, // Changed to int
             @Param("statuses") List<ReelStatus> statuses
     );
 
+    @Query("""
+      SELECT r FROM Reel r
+      WHERE r.status IN :statuses
+        AND r.deckle BETWEEN :minDeckle AND :maxDeckle
+        AND r.currentWeight > 0
+      """)
+    List<Reel> findAvailableByDeckleRange(
+            @Param("minDeckle") double minDeckle,
+            @Param("maxDeckle") double maxDeckle,
+            @Param("statuses") List<ReelStatus> statuses
+    );
+
+    long countByCreatedAt(LocalDate createdAt);
 }
