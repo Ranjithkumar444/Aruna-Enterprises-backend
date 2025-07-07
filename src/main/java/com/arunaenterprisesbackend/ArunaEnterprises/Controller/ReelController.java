@@ -1,12 +1,10 @@
 package com.arunaenterprisesbackend.ArunaEnterprises.Controller;
 
 import com.arunaenterprisesbackend.ArunaEnterprises.DTO.*;
-import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Order;
-import com.arunaenterprisesbackend.ArunaEnterprises.Entity.OrderReelUsage;
-import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Reel;
-import com.arunaenterprisesbackend.ArunaEnterprises.Entity.ReelStatus;
+import com.arunaenterprisesbackend.ArunaEnterprises.Entity.*;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.OrderReelUsageRepository;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.ReelRepository;
+import com.arunaenterprisesbackend.ArunaEnterprises.Repository.ReelUsageHistoryRepository;
 import com.arunaenterprisesbackend.ArunaEnterprises.Service.ReelService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -35,6 +33,10 @@ public class ReelController {
 
     @Autowired
     private OrderReelUsageRepository orderReelUsageRepository;
+
+    @Autowired
+    private ReelUsageHistoryRepository reelUsageHistoryRepository;
+
 
     @PostMapping("/register-reel")
     public ResponseEntity<ReelRegistrationResponseDTO> reelRegister(@RequestBody ReelDTO reeldata) {
@@ -350,6 +352,24 @@ public class ReelController {
                 "message", message,
                 "timestamp", LocalDateTime.now()
         );
+    }
+
+    @GetMapping("/reel/usage/{barcodeId}")
+    private ResponseEntity<ReelUsageHistory> reelUsage(@PathVariable("barcodeId") String id){
+        ReelUsageHistory reelUsageHistory;
+        try {
+            Long reelNo = Long.valueOf(id);
+            reelUsageHistory = reelUsageHistoryRepository.findByReelNo(reelNo);
+        } catch (NumberFormatException e) {
+            reelUsageHistory = (ReelUsageHistory) reelUsageHistoryRepository.findByBarcodeId(id);
+        }
+
+        if (reelUsageHistory == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+
+        return ResponseEntity.ok(reelUsageHistory);
+
     }
 }
 

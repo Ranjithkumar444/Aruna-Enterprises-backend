@@ -22,6 +22,8 @@ public class ReelUsageHistory {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private long reelNo;
+
     private String barcodeId;
 
     private double usedWeight;

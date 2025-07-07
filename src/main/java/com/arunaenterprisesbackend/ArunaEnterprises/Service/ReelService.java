@@ -30,15 +30,18 @@ public class ReelService {
         reel.setInitialWeight(reeldata.getInitialWeight());
         reel.setCurrentWeight(reeldata.getInitialWeight());
         reel.setReelNo(reeldata.getReelNo());
-        reel.setPreviousWeight(reel.getInitialWeight());
+        reel.setPreviousWeight(reeldata.getInitialWeight());
         reel.setSupplierName(reeldata.getSupplierName());
         reel.setUnit(reeldata.getUnit());
         reel.setPaperType(reeldata.getPaperType());
-        reel.setCreatedAt(LocalDate.now(IST_ZONE));
-        reelRepository.save(reel);
 
-        String datestring = reel.getCreatedAt().toString().replaceAll("-", "");
-        String barcodeId = "REEL-" + reel.getId() + datestring;
+        LocalDate createdAt = LocalDate.now(IST_ZONE);
+        reel.setCreatedAt(createdAt);
+
+        long countToday = reelRepository.countByCreatedAt(createdAt);
+
+        String dateString = createdAt.toString().replaceAll("-", ""); // e.g. 20250707
+        String barcodeId = "REEL-" + (countToday + 1) + dateString;
         reel.setBarcodeId(barcodeId);
 
         byte[] barcodeImage = BarcodeGenerator.generateBarcodeImage(barcodeId);
@@ -48,4 +51,5 @@ public class ReelService {
 
         return new ReelRegistrationResponseDTO(barcodeId);
     }
+
 }

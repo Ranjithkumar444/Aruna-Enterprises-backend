@@ -16,36 +16,21 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 public class OrderSuggestedReels {
+    @Id @GeneratedValue Long id;
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_id", nullable = false, unique = true)
+    @OneToOne @JoinColumn(name = "order_id", nullable = false, unique = true)
     private Order order;
 
-    @ElementCollection
-    @CollectionTable(
-            name = "order_suggested_top_reels",
-            joinColumns = @JoinColumn(name = "suggestion_id")
-    )
+    @ElementCollection @CollectionTable(name = "order_suggested_top_reels", joinColumns = @JoinColumn(name = "suggestion_id"))
     private List<SuggestedReelItem> topReels = new ArrayList<>();
 
-    @ElementCollection
-    @CollectionTable(
-            name = "order_suggested_bottom_reels",
-            joinColumns = @JoinColumn(name = "suggestion_id")
-    )
+    @ElementCollection @CollectionTable(name = "order_suggested_bottom_reels", joinColumns = @JoinColumn(name = "suggestion_id"))
     private List<SuggestedReelItem> bottomReels = new ArrayList<>();
 
-    @ElementCollection
-    @CollectionTable(
-            name = "order_suggested_flute_reels",
-            joinColumns = @JoinColumn(name = "suggestion_id")
-    )
+    @ElementCollection @CollectionTable(name = "order_suggested_flute_reels", joinColumns = @JoinColumn(name = "suggestion_id"))
     private List<SuggestedReelItem> fluteReels = new ArrayList<>();
 
     @CreationTimestamp
     private ZonedDateTime createdAt;
+    private double usedDeckle;
 }

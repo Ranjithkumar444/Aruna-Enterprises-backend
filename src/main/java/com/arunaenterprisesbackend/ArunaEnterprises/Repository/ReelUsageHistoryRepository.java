@@ -9,5 +9,7 @@ import java.util.List;
 @Repository
 public interface ReelUsageHistoryRepository extends JpaRepository<ReelUsageHistory, Long> {
     List<ReelUsageHistory> findByBarcodeId(String barcodeId);
+
+    ReelUsageHistory findByReelNo(Long reelNo);
 }
 
