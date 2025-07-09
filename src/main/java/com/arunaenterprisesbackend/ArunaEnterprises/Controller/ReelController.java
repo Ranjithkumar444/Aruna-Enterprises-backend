@@ -2,10 +2,9 @@ package com.arunaenterprisesbackend.ArunaEnterprises.Controller;
 
 import com.arunaenterprisesbackend.ArunaEnterprises.DTO.*;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.*;
-import com.arunaenterprisesbackend.ArunaEnterprises.Repository.OrderReelUsageRepository;
-import com.arunaenterprisesbackend.ArunaEnterprises.Repository.ReelRepository;
-import com.arunaenterprisesbackend.ArunaEnterprises.Repository.ReelUsageHistoryRepository;
+import com.arunaenterprisesbackend.ArunaEnterprises.Repository.*;
 import com.arunaenterprisesbackend.ArunaEnterprises.Service.ReelService;
+import com.arunaenterprisesbackend.ArunaEnterprises.Service.ReelStockAlertService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -15,10 +14,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
@@ -31,11 +27,20 @@ public class ReelController {
     @Autowired
     private ReelRepository reelRepository;
 
+    @Autowired private ReelStockThresholdRepository repository;
+
+    @Autowired
+    private ReelStockAlertRepository reelStockAlertRepository;
+
+
     @Autowired
     private OrderReelUsageRepository orderReelUsageRepository;
 
     @Autowired
     private ReelUsageHistoryRepository reelUsageHistoryRepository;
+
+    @Autowired
+    private ReelStockAlertService reelStockAlertService;
 
 
     @PostMapping("/register-reel")
@@ -240,6 +245,7 @@ public class ReelController {
             dto.setGsm(reel.getGsm());
             dto.setBurstFactor(reel.getBurstFactor());
             dto.setDeckle(reel.getDeckle());
+            dto.setUsageType(reel.getReelSet());
 
             List<OrderReelUsage> usages = orderReelUsageRepository.findByReelId(reel.getId());
             List<OrderUsageDetailsDTO> usageDTOs = usages.stream().map(usage -> {
@@ -355,21 +361,55 @@ public class ReelController {
     }
 
     @GetMapping("/reel/usage/{barcodeId}")
-    private ResponseEntity<ReelUsageHistory> reelUsage(@PathVariable("barcodeId") String id){
-        ReelUsageHistory reelUsageHistory;
+    public ResponseEntity<List<ReelUsageHistory>> reelUsage(@PathVariable("barcodeId") String id) {
+        List<ReelUsageHistory> usageHistoryList = new ArrayList<>();
+
         try {
-            Long reelNo = Long.valueOf(id);
-            reelUsageHistory = reelUsageHistoryRepository.findByReelNo(reelNo);
+            Long reelNo = Long.valueOf(id); // if input is a number, treat as reelNo
+            usageHistoryList = reelUsageHistoryRepository.findByReelNo(reelNo);
         } catch (NumberFormatException e) {
-            reelUsageHistory = (ReelUsageHistory) reelUsageHistoryRepository.findByBarcodeId(id);
+            // if not a number, treat it as barcodeId
+            usageHistoryList = reelUsageHistoryRepository.findByBarcodeId(id);
         }
 
-        if (reelUsageHistory == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        if (usageHistoryList.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(usageHistoryList);
         }
 
-        return ResponseEntity.ok(reelUsageHistory);
-
+        return ResponseEntity.ok(usageHistoryList);
     }
+
+
+    @PostMapping("/reel/stock/alert")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ResponseEntity<?> createThreshold(@RequestBody ReelStockThreshold threshold) {
+        Optional<ReelStockThreshold> existing = repository.findByDeckleAndGsmAndUnit(
+                threshold.getDeckle(), threshold.getGsm(), threshold.getUnit());
+
+        if (existing.isPresent()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Threshold already exists for this Deckle, GSM and Unit");
+        }
+
+        return ResponseEntity.ok(repository.save(threshold));
+    }
+
+    @PostMapping("/reel/stock/alert/trigger")
+    public ResponseEntity<?> manualCheck() {
+        reelStockAlertService.checkAndGenerateStockAlerts();
+        return ResponseEntity.ok("Stock check triggered manually.");
+    }
+
+
+
+    @GetMapping("/reel/stock/alert/getAll")
+    public List<ReelStockThreshold> getAllThresholds() {
+        return repository.findAll();
+    }
+
+    @GetMapping("/reel/stock/alert/view")
+    public List<ReelStockAlert> getUnacknowledgedAlerts() {
+        return reelStockAlertRepository.findByAcknowledgedFalse();
+    }
+
 }
 

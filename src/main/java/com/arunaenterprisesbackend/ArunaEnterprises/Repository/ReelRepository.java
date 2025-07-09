@@ -49,4 +49,9 @@ public interface ReelRepository extends JpaRepository<Reel, Long> {
     );
 
     long countByCreatedAt(LocalDate createdAt);
+
+    @Query("SELECT r.deckle, r.gsm, r.unit, SUM(r.currentWeight) " +
+            "FROM Reel r GROUP BY r.deckle, r.gsm, r.unit")
+    List<Object[]> getGroupedWeightByDeckleGsmAndUnit();
+
 }
