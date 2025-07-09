@@ -17,7 +17,6 @@ import java.util.List;
 @NoArgsConstructor
 public class OrderSuggestedReels {
     @Id @GeneratedValue Long id;
-
     @OneToOne @JoinColumn(name = "order_id", nullable = false, unique = true)
     private Order order;
 
