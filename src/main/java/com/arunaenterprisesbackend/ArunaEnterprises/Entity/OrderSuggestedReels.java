@@ -16,7 +16,11 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 public class OrderSuggestedReels {
-    @Id @GeneratedValue Long id;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
     @OneToOne @JoinColumn(name = "order_id", nullable = false, unique = true)
     private Order order;
 
