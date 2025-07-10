@@ -524,6 +524,7 @@ public class OrderService {
                     dto.setUnit(i.getUnit());
                     dto.setReelSet(i.getReelSet());
                     dto.setStatus(i.getStatus());
+                    dto.setPaperTypeFlute(sr.getPaperTypeFlute());
                     dto.setCuttingLength(sr.getCuttingLength());
                     return dto;
                 })

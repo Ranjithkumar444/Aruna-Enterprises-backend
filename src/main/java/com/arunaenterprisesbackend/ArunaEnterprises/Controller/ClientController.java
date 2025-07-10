@@ -31,7 +31,6 @@ public class ClientController {
 
         String normalizedClient = clients.getClient().toLowerCase().replaceAll("[^a-z0-9]", "");
         client.setClientNormalizer(normalizedClient);
-        client.setBottomGsm(clients.getBottomGsm());
         client.setFluteGsm(clients.getFluteGsm());
         client.setLinerGsm(clients.getLinerGsm());
         client.setMadeUpOf(clients.getMadeUpOf());
@@ -41,6 +40,8 @@ public class ClientController {
         client.setTopGsm(clients.getTopGsm());
         client.setProduct(clients.getProduct());
         client.setSize(clients.getSize());
+        client.setPaperTypeFlute(clients.getPaperTypeFlute());
+        client.setBottomGsm(clients.getLinerGsm());
 
         String size = clients.getSize();
         String[] dimensions = size.split("X");
@@ -53,7 +54,7 @@ public class ClientController {
         String productType = clients.getProductType().toLowerCase().replaceAll("[^a-z0-9]", "");
         client.setProductType(productType);  // Always set this
 
-        if (productType.equals("punching")) {
+        if (productType.equals("punching") || productType.equals("Punching")) {
             // For punching: take values from client input
             client.setCuttingLength(clients.getCuttingLength());
             client.setDeckle(clients.getDeckle());
@@ -117,8 +118,8 @@ public class ClientController {
         reel.setPly(client.getPly());
         reel.setDeckle(client.getDeckle());
         reel.setCuttingLength(client.getCuttingLength());
+        reel.setBottomGsm(client.getLinerGsm());
         reel.setTopGsm(client.getTopGsm());
-        reel.setBottomGsm(client.getBottomGsm());
         reel.setLinerGsm(client.getLinerGsm());
         reel.setFluteGsm(client.getFluteGsm());
         reel.setMadeUpOf(client.getMadeUpOf());
@@ -127,6 +128,7 @@ public class ClientController {
         reel.setOneUps(client.getOneUps());
         reel.setTwoUps(client.getTwoUps());
         reel.setThreeUps(client.getThreeUps());
+        reel.setPaperTypeFlute(client.getPaperTypeFlute());
         reel.setFourUps(client.getFourUps());
         reel.setDescription(client.getDescription());
         reel.setProductionCostPerBox(client.getProductionCostPerBox());

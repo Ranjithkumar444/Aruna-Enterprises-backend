@@ -30,13 +30,14 @@ public class Clients {
     private double deckle;
     private double cuttingLength;
     private int topGsm;
-    private int bottomGsm;
     private int linerGsm;
+    private int bottomGsm;
     private int fluteGsm;
 
     private String madeUpOf;
     private String paperTypeTop;
     private String paperTypeBottom;
+    private String paperTypeFlute;
     private double oneUps;
     private double twoUps;
     private double threeUps;
