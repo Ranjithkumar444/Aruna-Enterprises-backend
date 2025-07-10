@@ -18,8 +18,8 @@ public class SuggestedReel {
     @Id @GeneratedValue long id;
     private String client, clientNormalizer, product, size, ply;
     private double deckle, cuttingLength;
-    private int topGsm, bottomGsm, linerGsm, fluteGsm;
-    private String madeUpOf, paperTypeTop, paperTypeBottom;
+    private int topGsm, linerGsm, fluteGsm,bottomGsm;
+    private String madeUpOf, paperTypeTop, paperTypeBottom , paperTypeFlute;
     private double oneUps, twoUps, threeUps, fourUps;
     private String description;
     private double sellingPricePerBox;

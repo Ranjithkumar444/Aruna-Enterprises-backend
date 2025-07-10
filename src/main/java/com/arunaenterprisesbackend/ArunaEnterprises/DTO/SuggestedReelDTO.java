@@ -17,6 +17,7 @@ public class SuggestedReelDTO {
     private int currentWeight;
     private String reelSet;
     private ReelStatus status;
+    private String paperTypeFlute;
 }
 
 
