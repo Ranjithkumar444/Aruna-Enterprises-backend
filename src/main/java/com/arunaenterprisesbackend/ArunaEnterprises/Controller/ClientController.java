@@ -1,11 +1,9 @@
 package com.arunaenterprisesbackend.ArunaEnterprises.Controller;
 
-import ch.qos.logback.core.net.server.Client;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Clients;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.SuggestedReel;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.ClientRepository;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.SuggestedReelRepository;
-import com.azure.core.annotation.Get;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
