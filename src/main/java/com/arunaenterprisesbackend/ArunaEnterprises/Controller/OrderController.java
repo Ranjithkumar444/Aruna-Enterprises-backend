@@ -110,6 +110,7 @@ public class OrderController {
 
         ZonedDateTime now = ZonedDateTime.now(ZoneId.of("America/Chicago"));
         ZonedDateTime cutoff = now.minusDays(1);
+
         return ResponseEntity.ok(activeOrders);
     }
 

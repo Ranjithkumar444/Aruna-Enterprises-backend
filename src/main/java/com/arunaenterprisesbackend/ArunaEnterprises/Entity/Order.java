@@ -1,5 +1,6 @@
 package com.arunaenterprisesbackend.ArunaEnterprises.Entity;
 
+import com.arunaenterprisesbackend.ArunaEnterprises.Service.OrderStatusListener;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -17,6 +18,7 @@ import java.time.ZonedDateTime;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@EntityListeners(OrderStatusListener.class)
 public class Order {
 
     @Id
