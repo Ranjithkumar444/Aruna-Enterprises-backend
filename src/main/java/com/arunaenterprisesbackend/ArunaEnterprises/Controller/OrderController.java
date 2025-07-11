@@ -40,14 +40,15 @@ public class OrderController {
         try {
             SuggestedReelsResponseDTO response = orderservice.createOrder(order);
             return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            SuggestedReelsResponseDTO errorResponse = new SuggestedReelsResponseDTO();
-            errorResponse.setMessage("Failed to create order: " + e.getMessage());
-            errorResponse.setTopGsmReels(Collections.emptyList());
-            errorResponse.setBottomGsmReels(Collections.emptyList());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
-        }
+        }  catch (Exception e) {
+        SuggestedReelsResponseDTO errorResponse = new SuggestedReelsResponseDTO();
+        errorResponse.setMessage("Failed to create order: " + e.toString());
+        errorResponse.setTopGsmReels(Collections.emptyList());
+        errorResponse.setBottomGsmReels(Collections.emptyList());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
     }
+
+}
 
 
     @PutMapping("/order/{id}/status")
