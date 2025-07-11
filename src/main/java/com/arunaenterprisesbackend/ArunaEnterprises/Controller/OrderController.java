@@ -111,13 +111,6 @@ public class OrderController {
         ZonedDateTime now = ZonedDateTime.now(ZoneId.of("America/Chicago"));
         ZonedDateTime cutoff = now.minusDays(1);
 
-        List<Order> recentShippedOrders = orderRepository.findByStatusAndShippedAtAfter(
-                OrderStatus.SHIPPED,
-                cutoff
-        );
-
-        activeOrders.addAll(recentShippedOrders);
-
         return ResponseEntity.ok(activeOrders);
     }
 

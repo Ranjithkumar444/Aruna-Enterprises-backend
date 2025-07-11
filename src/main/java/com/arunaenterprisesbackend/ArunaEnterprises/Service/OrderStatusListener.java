@@ -15,7 +15,7 @@ public class OrderStatusListener {
 
     @PostUpdate
     public void afterUpdate(Order order) {
-        if (order.getStatus() == OrderStatus.COMPLETED) {
+        if (order.getStatus() == OrderStatus.COMPLETED || order.getStatus() == OrderStatus.SHIPPED) {
             repo.deleteByOrder(order);
         }
     }
