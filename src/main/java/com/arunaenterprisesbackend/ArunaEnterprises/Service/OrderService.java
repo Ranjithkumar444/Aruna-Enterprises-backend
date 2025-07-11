@@ -299,15 +299,17 @@ public class OrderService {
     public SuggestedReelsResponseDTO createOrder(OrderDTO dto) {
         Order order = createAndSaveOrder(dto);
 
+        // Try to find matching suggested reel (optional)
         SuggestedReel sr = suggestedReelRepository
                 .findByClientNormalizerAndSize(order.getNormalizedClient(), order.getSize())
                 .orElse(null);
 
+        // If no suggested reels, just return success with empty lists
         if (sr == null) {
             return createEmptyResponse("Order created — no suggested reels found");
         }
 
-        // If oneUps is small (say < 65), try all 2ups, 3ups, 4ups
+        // If found, continue generating suggestions
         List<Double> candidateDeckles = new ArrayList<>();
         if (sr.getOneUps() < 65.0) {
             if (sr.getTwoUps() > 0) candidateDeckles.add(sr.getTwoUps());
@@ -319,11 +321,9 @@ public class OrderService {
 
         OrderSuggestedReels osr = new OrderSuggestedReels();
         osr.setOrder(order);
-        osr.setUsedDeckle(Collections.max(candidateDeckles));  // or you can store all
+        osr.setUsedDeckle(Collections.max(candidateDeckles));
 
         boolean needsFlute = sr.getFluteGsm() != sr.getLinerGsm();
-
-
 
         for (String layer : List.of("TOP", "BOTTOM", "FLUTE")) {
             if (layer.equals("FLUTE") && !needsFlute) break;
@@ -342,11 +342,7 @@ public class OrderService {
                 bestItems.addAll(found);
             }
 
-            // Deduplicate by reelNo or barcodeId if needed
-            bestItems = bestItems.stream()
-                    .distinct()
-                    .limit(10)
-                    .toList();
+            bestItems = bestItems.stream().distinct().limit(10).toList();
 
             switch (layer) {
                 case "TOP" -> osr.getTopReels().addAll(bestItems);
@@ -355,40 +351,45 @@ public class OrderService {
             }
         }
 
-        Optional<SuggestedReel> srr = suggestedReelRepository.findByClientNormalizerAndSize(order.getNormalizedClient(), order.getSize());
-        SuggestedReel suggestedreel = srr.get();
-
-        double dkl = suggestedreel.getDeckle();
-        double ctl = suggestedreel.getCuttingLength();
-        double topgsm = suggestedreel.getTopGsm();
-        double linergsm = suggestedreel.getLinerGsm();
-        double flutegsm = suggestedreel.getFluteGsm();
-
-        int qnt = dto.getQuantity();
-
-        double topWeightPerSheetGrams = (dkl * ctl * topgsm) / 10_000.0;
-        double linerWeightPerSheetGrams = (dkl * ctl * linergsm) / 10_000.0;
-        double fluteWeightPerSheetGrams = needsFlute
-                ? (dkl * ctl * flutegsm * 1.60) / 10_000.0
-                : linerWeightPerSheetGrams;
-
-        double toptotalweight = topWeightPerSheetGrams * qnt;
-        double linertotalweight = linerWeightPerSheetGrams * qnt;
-        double flutetotalweight = fluteWeightPerSheetGrams * qnt;
-
+        // Save the suggestion if reel data existed
         orderSuggestedReelsRepository.save(osr);
 
-        return new SuggestedReelsResponseDTO(
-                mapDTO(osr.getTopReels(), sr),
-                mapDTO(osr.getBottomReels(), sr),
-                mapDTO(osr.getFluteReels(), sr),
-                needsFlute,
-                "Order created with suggested reels",
-                toptotalweight,
-                linertotalweight,
-                flutetotalweight
-        );
+        // If reel suggestions existed, calculate weights
+        if (sr != null) {
+            double dkl = sr.getDeckle();
+            double ctl = sr.getCuttingLength();
+            double topgsm = sr.getTopGsm();
+            double linergsm = sr.getLinerGsm();
+            double flutegsm = sr.getFluteGsm();
+
+            int qnt = dto.getQuantity();
+
+            double topWeightPerSheetGrams = (dkl * ctl * topgsm) / 10_000.0;
+            double linerWeightPerSheetGrams = (dkl * ctl * linergsm) / 10_000.0;
+            double fluteWeightPerSheetGrams = needsFlute
+                    ? (dkl * ctl * flutegsm * 1.60) / 10_000.0
+                    : linerWeightPerSheetGrams;
+
+            double toptotalweight = topWeightPerSheetGrams * qnt;
+            double linertotalweight = linerWeightPerSheetGrams * qnt;
+            double flutetotalweight = fluteWeightPerSheetGrams * qnt;
+
+            return new SuggestedReelsResponseDTO(
+                    mapDTO(osr.getTopReels(), sr),
+                    mapDTO(osr.getBottomReels(), sr),
+                    mapDTO(osr.getFluteReels(), sr),
+                    needsFlute,
+                    "Order created with suggested reels",
+                    toptotalweight,
+                    linertotalweight,
+                    flutetotalweight
+            );
+        }
+
+        // If no suggestion data, return empty suggestion response
+        return createEmptyResponse("Order created successfully — no suggested reels available");
     }
+
 
     public SuggestedReelsResponseDTO getSuggestedReels(Long orderId) {
         Order order = orderRepository.findById(orderId)
