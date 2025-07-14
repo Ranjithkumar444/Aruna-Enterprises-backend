@@ -10,17 +10,13 @@ import org.springframework.stereotype.Component;
 @Component
 public class OrderStatusListener {
 
-    private static OrderSuggestedReelsRepository staticRepo;
-
     @Autowired
-    public void setRepo(OrderSuggestedReelsRepository repo) {
-        OrderStatusListener.staticRepo = repo;
-    }
+    private OrderSuggestedReelsRepository repo;
 
     @PostUpdate
     public void afterUpdate(Order order) {
-        if (order.getStatus() == OrderStatus.COMPLETED || order.getStatus() == OrderStatus.SHIPPED) {
-            staticRepo.deleteByOrder(order);
+        if (order.getStatus() == OrderStatus.COMPLETED) {
+            repo.deleteByOrder(order);
         }
     }
 }
