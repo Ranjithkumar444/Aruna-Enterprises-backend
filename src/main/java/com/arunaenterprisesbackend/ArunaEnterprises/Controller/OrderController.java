@@ -46,10 +46,9 @@ public class OrderController {
         errorResponse.setTopGsmReels(Collections.emptyList());
         errorResponse.setBottomGsmReels(Collections.emptyList());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+
     }
-
-}
-
 
     @PutMapping("/order/{id}/status")
     public ResponseEntity<String> updateOrderStatus(
