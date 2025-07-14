@@ -10,6 +10,7 @@ import com.arunaenterprisesbackend.ArunaEnterprises.Repository.ReelRepository;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.SuggestedReelRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.expression.ExpressionException;
 import org.springframework.stereotype.Service;
 
 import java.time.ZoneId;
@@ -405,32 +406,46 @@ public class OrderService {
         return mapToResponse(suggestions);
     }
 
+    @Transactional
     public void updateOrderStatus(Long orderId, OrderStatus newStatus, String transportNumber) {
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found"));
+        try {
+            Order order = orderRepository.findById(orderId)
+                    .orElseThrow(() -> new OrderNotFoundException("Order not found with id: " + orderId));
 
-        ZonedDateTime now = ZonedDateTime.now(IST_ZONE);
-        order.setUpdatedAt(now);
-        order.setStatus(newStatus);
+            ZonedDateTime now = ZonedDateTime.now(IST_ZONE);
+            order.setUpdatedAt(now);
+            order.setStatus(newStatus);
 
-        switch (newStatus) {
-            case COMPLETED -> {
-                order.setCompletedAt(now);
-                order.setShippedAt(null);
-                order.setTransportNumber(null);
+            switch (newStatus) {
+                case COMPLETED -> {
+                    order.setCompletedAt(now);
+                    order.setShippedAt(null);
+                    order.setTransportNumber(null);
+                    try {
+                        orderSuggestedReelsRepository.deleteByOrder(order);
+                    } catch (Exception e) {
+                    }
+                }
+                case SHIPPED -> {
+                    order.setShippedAt(now);
+                    order.setTransportNumber(transportNumber);
+
+                    try {
+                        orderSuggestedReelsRepository.deleteByOrder(order);
+                    } catch (Exception e) {
+                    }
+                }
+                default -> {
+                    order.setCompletedAt(null);
+                    order.setShippedAt(null);
+                    order.setTransportNumber(null);
+                }
             }
-            case SHIPPED -> {
-                order.setShippedAt(now);
-                order.setTransportNumber(transportNumber);
-            }
-            default -> {
-                order.setCompletedAt(null);
-                order.setShippedAt(null);
-                order.setTransportNumber(null);
-            }
+
+            orderRepository.save(order);
+        } catch (Exception e) {
+            throw e; // Re-throw to maintain transactional behavior
         }
-
-        orderRepository.save(order);
     }
     // ---------- Private Helpers ----------
 
