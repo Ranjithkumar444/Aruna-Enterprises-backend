@@ -53,6 +53,8 @@ public class SecurityConfig {
                         .requestMatchers("/admin/attendance-list").hasAnyRole("SUPER_ADMIN")
                         .requestMatchers("/admin/contact/**").hasAnyRole("SUPER_ADMIN", "ADMIN")
                         .requestMatchers("/admin/box/**").hasAnyRole("SUPER_ADMIN", "ADMIN")
+                        .requestMatchers("/admin/api/order-summaries").hasAnyRole("SUPER_ADMIN")
+                        .requestMatchers("/admin/order/client/create").hasAnyRole("SUPER_ADMIN")
                         .requestMatchers("/admin/**").authenticated()
                         .anyRequest().authenticated())
                 .httpBasic(httpBasic -> httpBasic.disable())

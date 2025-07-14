@@ -47,11 +47,18 @@ public interface ReelRepository extends JpaRepository<Reel, Long> {
             @Param("maxDeckle") double maxDeckle,
             @Param("statuses") List<ReelStatus> statuses
     );
-
     long countByCreatedAt(LocalDate createdAt);
+
 
     @Query("SELECT r.deckle, r.gsm, r.unit, SUM(r.currentWeight) " +
             "FROM Reel r GROUP BY r.deckle, r.gsm, r.unit")
     List<Object[]> getGroupedWeightByDeckleGsmAndUnit();
+
+    @Query("SELECT r FROM Reel r WHERE r.gsm = ?1 AND r.status IN ('NOT_IN_USE', 'PARTIALLY_USED_AVAILABLE')")
+    List<Reel> findByGsmAndAvailableStatus(int gsm);
+
+    @Query("SELECT r FROM Reel r WHERE r.reelSet = ?1 ORDER BY r.reelNo")
+    List<Reel> findByReelSet(String reelSet);
+
 
 }

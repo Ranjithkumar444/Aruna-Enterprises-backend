@@ -15,7 +15,9 @@ import javax.validation.constraints.AssertTrue;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SuggestedReel {
-    @Id @GeneratedValue long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
     private String client, clientNormalizer, product, size, ply;
     private double deckle, cuttingLength;
     private int topGsm, linerGsm, fluteGsm,bottomGsm;
