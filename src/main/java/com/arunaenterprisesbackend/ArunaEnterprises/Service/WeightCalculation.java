@@ -4,6 +4,7 @@ import com.arunaenterprisesbackend.ArunaEnterprises.DTO.CalculationDTO;
 import com.arunaenterprisesbackend.ArunaEnterprises.DTO.PunchingBoxDTO;
 import org.springframework.stereotype.Component;
 
+
 @Component
 public class WeightCalculation {
 
@@ -19,11 +20,11 @@ public class WeightCalculation {
         double surfaceArea = 0.0;
         double areaInM2 = 0.0;
 
-        if(ops.equalsIgnoreCase("oneops")){
+        if (ops.equalsIgnoreCase("oneops")) {
             surfaceArea = (2 * length + 2 * width + 50) * (height + width + 30);
             areaInM2 = surfaceArea / 1_000_000.0;
-        }else{
-            surfaceArea = ( (2 * length + 50) + (2 * width + 50)) * (height + width + 30);
+        } else {
+            surfaceArea = ((2 * length + 50) + (2 * width + 50)) * (height + width + 30);
             areaInM2 = surfaceArea / 1_000_000.0;
         }
 
@@ -43,6 +44,7 @@ public class WeightCalculation {
         }
 
         double totalWeight = weightPerBox * numberOfBoxes;
+
         return totalWeight;
     }
 
@@ -67,5 +69,38 @@ public class WeightCalculation {
         double weightPerSheetGrams = (deckle * length * gsm * multiplier) / 10_000.0;
 
         return weightPerSheetGrams * sheets;
+    }
+
+    // ✅ Corrugated Wastage % Calculation — No impact on existing structure
+    public double calculateWastagePercent(CalculationDTO dto, String ops) {
+        int length = dto.getLength();
+        int width = dto.getWidth();
+        int height = dto.getHeight();
+
+        double cleanArea = 0.0;
+        double areaWithWastage = 0.0;
+
+        if (ops.equalsIgnoreCase("oneops")) {
+            cleanArea = (2 * length + 2 * width) * (height + width);
+            areaWithWastage = (2 * length + 2 * width + 50) * (height + width + 30);
+        } else {
+            cleanArea = (2 * length + 2 * width) * (height + width);
+            areaWithWastage = ((2 * length + 50) + (2 * width + 50)) * (height + width + 30);
+        }
+
+        double wastage = areaWithWastage - cleanArea;
+        return (wastage / cleanArea) * 100; // Return as percentage
+    }
+
+    // ✅ Punching Wastage % Calculation — NEW Method
+    public double calculatePunchingWastagePercent(PunchingBoxDTO dto) {
+        int deckle = dto.getDeckle();
+        int length = dto.getCuttingLength();
+
+        double cleanArea = deckle * length;
+        double areaWithWastage = (deckle + 30) * (length + 30); // 30mm margin added
+
+        double wastage = areaWithWastage - cleanArea;
+        return (wastage / cleanArea) * 100; // Return as percentage
     }
 }

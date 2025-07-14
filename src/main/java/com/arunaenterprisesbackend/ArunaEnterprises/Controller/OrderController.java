@@ -1,12 +1,14 @@
 package com.arunaenterprisesbackend.ArunaEnterprises.Controller;
 
 import com.arunaenterprisesbackend.ArunaEnterprises.DTO.OrderDTO;
+import com.arunaenterprisesbackend.ArunaEnterprises.DTO.OrderSplitDTO;
 import com.arunaenterprisesbackend.ArunaEnterprises.DTO.SuggestedReelsResponseDTO;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Order;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.OrderReelUsage;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.OrderStatus;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.OrderReelUsageRepository;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.OrderRepository;
+import com.arunaenterprisesbackend.ArunaEnterprises.Repository.OrderSuggestedReelsRepository;
 import com.arunaenterprisesbackend.ArunaEnterprises.Service.OrderService;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -35,20 +37,39 @@ public class OrderController {
     @Autowired
     private OrderReelUsageRepository orderReelUsageRepository;
 
+    @Autowired
+    private OrderSuggestedReelsRepository orderSuggestedReelsRepository;
+
     @PostMapping("/order/create-order")
     public ResponseEntity<SuggestedReelsResponseDTO> createOrderCnt(@RequestBody OrderDTO order) {
         try {
             SuggestedReelsResponseDTO response = orderservice.createOrder(order);
             return ResponseEntity.ok(response);
-        }  catch (Exception e) {
-        SuggestedReelsResponseDTO errorResponse = new SuggestedReelsResponseDTO();
-        errorResponse.setMessage("Failed to create order: " + e.toString());
-        errorResponse.setTopGsmReels(Collections.emptyList());
-        errorResponse.setBottomGsmReels(Collections.emptyList());
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        } catch (Exception e) {
+            SuggestedReelsResponseDTO error = new SuggestedReelsResponseDTO();
+            error.setMessage("Failed to create order: " + e.getMessage());
+            error.setTopGsmReels(Collections.emptyList());
+            error.setBottomGsmReels(Collections.emptyList());
+            error.setFluteGsmReels(Collections.emptyList());
+            error.setFluteRequired(false);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
-
     }
+
+
+    @PostMapping("/order/split")
+    public ResponseEntity<String> splitOrder(@RequestBody OrderSplitDTO dto) {
+        try {
+            orderservice.splitOrder(dto);
+            return ResponseEntity.ok("Order split successfully.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to split order: " + e.getMessage());
+        }
+    }
+
+
+
 
     @PutMapping("/order/{id}/status")
     public ResponseEntity<String> updateOrderStatus(
@@ -131,12 +152,30 @@ public class OrderController {
     }
 
     @GetMapping("/order/{orderId}/suggested-reels")
-    public ResponseEntity<?> getSuggestedReels(@PathVariable Long orderId) {
+    public ResponseEntity<SuggestedReelsResponseDTO> getSuggestedReels(@PathVariable Long orderId) {
         try {
             SuggestedReelsResponseDTO response = orderservice.getSuggestedReels(orderId);
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
-            return handleException(e);
+            String errorMessage = e.getMessage() != null ? e.getMessage() : "Unknown error";
+
+            SuggestedReelsResponseDTO errorResponse = new SuggestedReelsResponseDTO();
+            errorResponse.setTopGsmReels(Collections.emptyList());
+            errorResponse.setBottomGsmReels(Collections.emptyList());
+            errorResponse.setFluteGsmReels(Collections.emptyList());
+            errorResponse.setFluteRequired(false);
+            errorResponse.setMessage("Error retrieving suggested reels: " + errorMessage);
+
+            HttpStatus status;
+            if (errorMessage.contains("Order not found") || errorMessage.contains("No suggestions found")) {
+                status = HttpStatus.NOT_FOUND;
+            } else if (errorMessage.contains("Suggestions not available for completed orders")) {
+                status = HttpStatus.BAD_REQUEST;
+            } else {
+                status = HttpStatus.INTERNAL_SERVER_ERROR;
+            }
+
+            return ResponseEntity.status(status).body(errorResponse);
         }
     }
 

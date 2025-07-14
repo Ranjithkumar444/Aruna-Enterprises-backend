@@ -6,6 +6,7 @@ import com.arunaenterprisesbackend.ArunaEnterprises.Repository.ClientRepository;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.SuggestedReelRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,6 +23,7 @@ public class ClientController {
 
 
     @PostMapping("/client/order/create")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<String> clientCreate(@RequestBody Clients clients) {
         Clients client = new Clients();
 

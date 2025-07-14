@@ -6,35 +6,25 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
-
-import java.time.ZonedDateTime;
-
 @Entity
-@Table(name = "reel_usage_history")
+@Table(name = "reel_usage_summary")
 @Getter
 @Setter
-@AllArgsConstructor
 @NoArgsConstructor
-public class ReelUsageHistory {
+@AllArgsConstructor
+public class ReelUsageSummary {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private long reelNo;
-
+    private Long reelNo;
     private String barcodeId;
-
-    private double usedWeight;
-
-    private ZonedDateTime usedAt;
-
-    private String usedBy;
-
     private String reelSet;
-
-    private String boxDetails;
-
+    private double weightConsumed;
     private String usageType;
+
+    private String reelWastagePercentage;
+
+    private double reelWastage;
 }

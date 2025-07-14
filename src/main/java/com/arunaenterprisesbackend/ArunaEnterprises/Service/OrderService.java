@@ -1,6 +1,7 @@
 package com.arunaenterprisesbackend.ArunaEnterprises.Service;
 
 import com.arunaenterprisesbackend.ArunaEnterprises.DTO.OrderDTO;
+import com.arunaenterprisesbackend.ArunaEnterprises.DTO.OrderSplitDTO;
 import com.arunaenterprisesbackend.ArunaEnterprises.DTO.SuggestedReelDTO;
 import com.arunaenterprisesbackend.ArunaEnterprises.DTO.SuggestedReelsResponseDTO;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.*;
@@ -8,7 +9,11 @@ import com.arunaenterprisesbackend.ArunaEnterprises.Repository.OrderRepository;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.OrderSuggestedReelsRepository;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.ReelRepository;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.SuggestedReelRepository;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 import jakarta.transaction.Transactional;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.expression.ExpressionException;
 import org.springframework.stereotype.Service;
@@ -574,4 +579,35 @@ public class OrderService {
         response.setMessage(message);
         return response;
     }
+
+    @Transactional
+    public void splitOrder(OrderSplitDTO dto) {
+        Order original = orderRepository.findById(dto.getOriginalOrderId())
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        int total = dto.getFirstOrderQuantity() + dto.getSecondOrderQuantity();
+        if (total != original.getQuantity()) {
+            throw new RuntimeException("Split quantities do not match original quantity.");
+        }
+
+        // Update original order with first part
+        original.setQuantity(dto.getFirstOrderQuantity());
+        orderRepository.save(original);
+
+        // Create second duplicate order
+        Order newOrder = new Order();
+        BeanUtils.copyProperties(original, newOrder, "id", "createdAt", "updatedAt", "completedAt", "shippedAt");
+        newOrder.setQuantity(dto.getSecondOrderQuantity());
+        newOrder.setCreatedAt(ZonedDateTime.now(ZoneId.of("Asia/Kolkata")));
+        newOrder.setUpdatedAt(ZonedDateTime.now(ZoneId.of("Asia/Kolkata")));
+        newOrder.setTransportNumber(null);
+        newOrder.setCompletedAt(null);
+        newOrder.setShippedAt(null);
+        newOrder.setStatus(original.getStatus());
+        newOrder.setNormalizedClient(original.getNormalizedClient());
+
+        orderRepository.save(newOrder);
+    }
+
+
 }
