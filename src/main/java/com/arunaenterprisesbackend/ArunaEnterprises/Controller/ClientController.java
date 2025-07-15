@@ -4,12 +4,15 @@ import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Clients;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.SuggestedReel;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.ClientRepository;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.SuggestedReelRepository;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/admin")
@@ -144,6 +147,65 @@ public class ClientController {
         List<Clients> client = clientRepository.findAll();
 
         return ResponseEntity.ok(client);
+    }
+
+    @PutMapping("/updateClientAndReel/{id}")
+    public ResponseEntity<String> updateClientAndReel(
+            @PathVariable long id,
+            @RequestBody Clients updatedClient,
+            @RequestHeader("Authorization") String token) {
+        try {
+            // Update Clients table
+            Clients existingClient = clientRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Client not found"));
+
+            String originalNormalizer = existingClient.getClientNormalizer();
+            String originalSize = existingClient.getSize();
+
+
+            // Update all fields except ID
+            BeanUtils.copyProperties(updatedClient, existingClient, "id");
+            clientRepository.save(existingClient);
+
+            // Update SuggestedReel table
+            Optional<SuggestedReel> existingReelOpt =
+                    suggestedReelRepository.findByClientNormalizerAndSize(originalNormalizer, originalSize);
+
+            if (existingReelOpt.isPresent()) {
+                SuggestedReel existingReel = existingReelOpt.get();
+
+                // Update all relevant fields
+                existingReel.setClient(updatedClient.getClient());
+                existingReel.setClientNormalizer(updatedClient.getClientNormalizer());
+                existingReel.setProduct(updatedClient.getProduct());
+                existingReel.setSize(updatedClient.getSize());
+                existingReel.setPly(updatedClient.getPly());
+                existingReel.setDeckle(updatedClient.getDeckle());
+                existingReel.setCuttingLength(updatedClient.getCuttingLength());
+                existingReel.setTopGsm(updatedClient.getTopGsm());
+                existingReel.setLinerGsm(updatedClient.getLinerGsm());
+                existingReel.setBottomGsm(updatedClient.getBottomGsm());
+                existingReel.setFluteGsm(updatedClient.getFluteGsm());
+                existingReel.setMadeUpOf(updatedClient.getMadeUpOf());
+                existingReel.setPaperTypeTop(updatedClient.getPaperTypeTop());
+                existingReel.setPaperTypeBottom(updatedClient.getPaperTypeBottom());
+                existingReel.setPaperTypeFlute(updatedClient.getPaperTypeFlute());
+                existingReel.setOneUps(updatedClient.getOneUps());
+                existingReel.setTwoUps(updatedClient.getTwoUps());
+                existingReel.setThreeUps(updatedClient.getThreeUps());
+                existingReel.setFourUps(updatedClient.getFourUps());
+                existingReel.setDescription(updatedClient.getDescription());
+                existingReel.setSellingPricePerBox(updatedClient.getSellingPricePerBox());
+                existingReel.setProductionCostPerBox(updatedClient.getProductionCostPerBox());
+
+                suggestedReelRepository.save(existingReel);
+            }
+
+            return ResponseEntity.ok("Client and suggested reel updated successfully");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error updating records: " + e.getMessage());
+        }
     }
 
 }

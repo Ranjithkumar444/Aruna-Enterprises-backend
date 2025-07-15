@@ -1,5 +1,6 @@
 package com.arunaenterprisesbackend.ArunaEnterprises.Entity;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -65,4 +66,9 @@ public class Order {
 
     @Column(name = "normalized_client")
     private String normalizedClient;
+
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "production_detail_id", referencedColumnName = "id")
+    @JsonManagedReference
+    private ProductionDetail productionDetail;
 }

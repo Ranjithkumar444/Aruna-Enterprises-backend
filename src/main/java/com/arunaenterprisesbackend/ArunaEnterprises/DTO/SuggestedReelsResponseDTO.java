@@ -3,6 +3,7 @@ package com.arunaenterprisesbackend.ArunaEnterprises.DTO;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
 
@@ -13,8 +14,6 @@ public class SuggestedReelsResponseDTO {
     private List<SuggestedReelDTO> fluteGsmReels;
     private boolean fluteRequired;
     private String message;
-    private double topExpectedWeight;
-    private double linerExpectedWeight;
-    private double fluteExpectedWeight;
+    private long orderid;
 
 }

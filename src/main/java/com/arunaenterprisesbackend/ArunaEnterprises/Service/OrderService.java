@@ -1,14 +1,8 @@
 package com.arunaenterprisesbackend.ArunaEnterprises.Service;
 
-import com.arunaenterprisesbackend.ArunaEnterprises.DTO.OrderDTO;
-import com.arunaenterprisesbackend.ArunaEnterprises.DTO.OrderSplitDTO;
-import com.arunaenterprisesbackend.ArunaEnterprises.DTO.SuggestedReelDTO;
-import com.arunaenterprisesbackend.ArunaEnterprises.DTO.SuggestedReelsResponseDTO;
+import com.arunaenterprisesbackend.ArunaEnterprises.DTO.*;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.*;
-import com.arunaenterprisesbackend.ArunaEnterprises.Repository.OrderRepository;
-import com.arunaenterprisesbackend.ArunaEnterprises.Repository.OrderSuggestedReelsRepository;
-import com.arunaenterprisesbackend.ArunaEnterprises.Repository.ReelRepository;
-import com.arunaenterprisesbackend.ArunaEnterprises.Repository.SuggestedReelRepository;
+import com.arunaenterprisesbackend.ArunaEnterprises.Repository.*;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -300,22 +294,21 @@ public class OrderService {
     @Autowired private SuggestedReelRepository suggestedReelRepository;
     @Autowired private ReelRepository reelRepository;
     @Autowired private OrderSuggestedReelsRepository orderSuggestedReelsRepository;
+    @Autowired private ProductionDetailRepository productionDetailRepository;
 
     @Transactional
     public SuggestedReelsResponseDTO createOrder(OrderDTO dto) {
         Order order = createAndSaveOrder(dto);
 
-        // Try to find matching suggested reel (optional)
         SuggestedReel sr = suggestedReelRepository
                 .findByClientNormalizerAndSize(order.getNormalizedClient(), order.getSize())
                 .orElse(null);
 
-        // If no suggested reels, just return success with empty lists
         if (sr == null) {
             return createEmptyResponse("Order created — no suggested reels found");
         }
 
-        // If found, continue generating suggestions
+        // If oneUps is small (say < 65), try all 2ups, 3ups, 4ups
         List<Double> candidateDeckles = new ArrayList<>();
         if (sr.getOneUps() < 65.0) {
             if (sr.getTwoUps() > 0) candidateDeckles.add(sr.getTwoUps());
@@ -330,6 +323,8 @@ public class OrderService {
         osr.setUsedDeckle(Collections.max(candidateDeckles));
 
         boolean needsFlute = sr.getFluteGsm() != sr.getLinerGsm();
+
+
 
         for (String layer : List.of("TOP", "BOTTOM", "FLUTE")) {
             if (layer.equals("FLUTE") && !needsFlute) break;
@@ -348,7 +343,11 @@ public class OrderService {
                 bestItems.addAll(found);
             }
 
-            bestItems = bestItems.stream().distinct().limit(10).toList();
+            // Deduplicate by reelNo or barcodeId if needed
+            bestItems = bestItems.stream()
+                    .distinct()
+                    .limit(10)
+                    .toList();
 
             switch (layer) {
                 case "TOP" -> osr.getTopReels().addAll(bestItems);
@@ -357,45 +356,88 @@ public class OrderService {
             }
         }
 
-        // Save the suggestion if reel data existed
+        Optional<SuggestedReel> srr = suggestedReelRepository.findByClientNormalizerAndSize(order.getNormalizedClient(), order.getSize());
+        SuggestedReel suggestedreel = srr.get();
+
+        double dkl = suggestedreel.getDeckle();
+        double ctl = suggestedreel.getCuttingLength();
+        double topgsm = suggestedreel.getTopGsm();
+        double linergsm = suggestedreel.getLinerGsm();
+        double flutegsm = suggestedreel.getFluteGsm();
+
+        int qnt = dto.getQuantity();
+
+        double topWeightPerSheetGrams = (dkl * ctl * topgsm) / 10_000.0;
+        double linerWeightPerSheetGrams = (dkl * ctl * linergsm) / 10_000.0;
+        double fluteWeightPerSheetGrams = (dkl * ctl * flutegsm * 1.60) / 10_000.0;
+
+        double toptotalweight = (topWeightPerSheetGrams * qnt)/1000;
+        double linertotalweight = (linerWeightPerSheetGrams * qnt)/1000;
+        double flutetotalweight = (fluteWeightPerSheetGrams * qnt)/1000;
+
         orderSuggestedReelsRepository.save(osr);
 
-        // If reel suggestions existed, calculate weights
-        if (sr != null) {
-            double dkl = sr.getDeckle();
-            double ctl = sr.getCuttingLength();
-            double topgsm = sr.getTopGsm();
-            double linergsm = sr.getLinerGsm();
-            double flutegsm = sr.getFluteGsm();
+        ProductionDetail prddetail = new ProductionDetail();
+        prddetail.setClient(order.getClient());
+        prddetail.setClientNormalizer(sr.getClientNormalizer());
+        prddetail.setTotalTopWeightReq(toptotalweight+30);
+        prddetail.setTotalLinerWeightReq(linertotalweight + 30);
+        prddetail.setTotalFluteWeightReq(flutetotalweight+30);
+        prddetail.setProductType(dto.getProductType());
+        prddetail.setTypeOfProduct(dto.getTypeOfProduct());
+        prddetail.setSize(dto.getSize());
+        prddetail.setPly(sr.getPly());
+        prddetail.setQuantity(dto.getQuantity());
+        int decklesRoundedDown = (int) Math.floor(sr.getDeckle());
+        prddetail.setDeckle(decklesRoundedDown);
+        prddetail.setCuttingLength(sr.getCuttingLength());
+        prddetail.setTopMaterial(sr.getPaperTypeTop());
+        prddetail.setFluteMaterial(sr.getPaperTypeFlute());
+        prddetail.setLinerMaterial(sr.getPaperTypeBottom());
+        order.setProductionDetail(prddetail);
+        prddetail.setOrder(order);
+        prddetail.setFluteGsm(sr.getFluteGsm());
+        prddetail.setTopGsm(sr.getTopGsm());
+        prddetail.setLinerGsm(sr.getLinerGsm());
+        prddetail.setPlain(dto.getQuantity());
+        prddetail.setSheets(dto.getQuantity());
+        prddetail.setTwoUpsDeckle(decklesRoundedDown*2);
+        prddetail.setThreeUpsDeckle(decklesRoundedDown*3);
+        prddetail.setFourUpsDeckle(decklesRoundedDown*4);
 
-            int qnt = dto.getQuantity();
+        prddetail.setTwoUpsPlain(dto.getQuantity()/2);
+        prddetail.setThreeUpsPlain(dto.getQuantity()/3);
+        prddetail.setFourUpsPlain(dto.getQuantity()/4);
 
-            double topWeightPerSheetGrams = (dkl * ctl * topgsm) / 10_000.0;
-            double linerWeightPerSheetGrams = (dkl * ctl * linergsm) / 10_000.0;
-            double fluteWeightPerSheetGrams = needsFlute
-                    ? (dkl * ctl * flutegsm * 1.60) / 10_000.0
-                    : linerWeightPerSheetGrams;
+        prddetail.setTwoUpsSheets(dto.getQuantity()/2);
+        prddetail.setThreeUpsSheets(dto.getQuantity()/3);
+        prddetail.setFourUpsSheets(dto.getQuantity()/4);
 
-            double toptotalweight = topWeightPerSheetGrams * qnt;
-            double linertotalweight = linerWeightPerSheetGrams * qnt;
-            double flutetotalweight = fluteWeightPerSheetGrams * qnt;
+        prddetail.setDeckle(sr.getDeckle());
 
-            return new SuggestedReelsResponseDTO(
-                    mapDTO(osr.getTopReels(), sr),
-                    mapDTO(osr.getBottomReels(), sr),
-                    mapDTO(osr.getFluteReels(), sr),
-                    needsFlute,
-                    "Order created with suggested reels",
-                    toptotalweight,
-                    linertotalweight,
-                    flutetotalweight
-            );
-        }
+        productionDetailRepository.save(prddetail);
+        orderRepository.save(order);
 
-        // If no suggestion data, return empty suggestion response
-        return createEmptyResponse("Order created successfully — no suggested reels available");
+        return new SuggestedReelsResponseDTO(
+                mapDTO(osr.getTopReels(), sr),
+                mapDTO(osr.getBottomReels(), sr),
+                mapDTO(osr.getFluteReels(), sr),
+                needsFlute,
+                "Order created with suggested reels",
+                order.getId()
+        );
     }
 
+    public ProductionDetail getProductionDetailByOrderId(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found with ID: " + orderId));
+
+        ProductionDetail pd = order.getProductionDetail();
+        if (pd == null) {
+            throw new RuntimeException("Production detail not found for Order ID: " + orderId);
+        }
+        return pd;
+    }
 
     public SuggestedReelsResponseDTO getSuggestedReels(Long orderId) {
         Order order = orderRepository.findById(orderId)
