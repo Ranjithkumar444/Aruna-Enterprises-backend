@@ -68,8 +68,12 @@ public class OrderController {
         }
     }
 
-
-
+    @GetMapping("/{orderId}/production-detail")
+    public ResponseEntity<ProductionDetail> getProductionDetailByOrderId(@PathVariable Long orderId) {
+        ProductionDetail pd = orderservice.getProductionDetailByOrderId(orderId);
+        return ResponseEntity.ok(pd);
+    }
+    
 
     @PutMapping("/order/{id}/status")
     public ResponseEntity<String> updateOrderStatus(
