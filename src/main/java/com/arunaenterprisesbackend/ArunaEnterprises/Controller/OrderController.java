@@ -6,6 +6,7 @@ import com.arunaenterprisesbackend.ArunaEnterprises.DTO.SuggestedReelsResponseDT
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Order;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.OrderReelUsage;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.OrderStatus;
+import com.arunaenterprisesbackend.ArunaEnterprises.Entity.ProductionDetail;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.OrderReelUsageRepository;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.OrderRepository;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.OrderSuggestedReelsRepository;
@@ -68,7 +69,11 @@ public class OrderController {
         }
     }
 
-
+    @GetMapping("/{orderId}/production-detail")
+    public ResponseEntity<ProductionDetail> getProductionDetailByOrderId(@PathVariable Long orderId) {
+        ProductionDetail pd = orderservice.getProductionDetailByOrderId(orderId);
+        return ResponseEntity.ok(pd);
+    }
 
 
     @PutMapping("/order/{id}/status")
