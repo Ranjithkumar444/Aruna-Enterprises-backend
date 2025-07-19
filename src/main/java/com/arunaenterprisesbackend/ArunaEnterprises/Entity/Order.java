@@ -36,8 +36,6 @@ public class Order {
 
     private String size;
 
-    private String materialGrade;
-
     private String deliveryAddress;
 
     @Enumerated(EnumType.STRING)

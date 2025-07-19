@@ -16,7 +16,6 @@ public class OrderDTO {
     private String typeOfProduct;
     private int quantity;
     private String size;
-    private String materialGrade;
     private String deliveryAddress;
     private String status;
     private ZonedDateTime createdAt;

@@ -498,7 +498,6 @@ public class OrderService {
 
     private Order createAndSaveOrder(OrderDTO orderDTO) {
 
-        Optional<Clients> client = clientRepository.findByClientNormalizerAndSize(orderDTO.getClient(),orderDTO.getSize());
 
         Order order = new Order();
         order.setClient(orderDTO.getClient());
@@ -507,7 +506,6 @@ public class OrderService {
         order.setCreatedBy(orderDTO.getCreatedBy());
         order.setSize(orderDTO.getSize());
         order.setStatus(OrderStatus.TODO);
-        order.setMaterialGrade(client.get().getPaperTypeBottom());
         order.setDeliveryAddress(orderDTO.getDeliveryAddress());
         order.setQuantity(orderDTO.getQuantity());
         order.setExpectedCompletionDate(orderDTO.getExpectedCompletionDate());
