@@ -498,7 +498,6 @@ public class OrderService {
 
     private Order createAndSaveOrder(OrderDTO orderDTO) {
 
-
         Order order = new Order();
         order.setClient(orderDTO.getClient());
         order.setCreatedAt(ZonedDateTime.now(IST_ZONE));
@@ -511,6 +510,7 @@ public class OrderService {
         order.setExpectedCompletionDate(orderDTO.getExpectedCompletionDate());
         order.setProductType(orderDTO.getProductType());
         order.setUpdatedAt(ZonedDateTime.now(IST_ZONE));
+        order.setProductName(orderDTO.getProductName());
         order.setUnit(orderDTO.getUnit());
         order.setTransportNumber(orderDTO.getTransportNumber());
 
