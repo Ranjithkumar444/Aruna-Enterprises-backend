@@ -296,6 +296,8 @@ public class OrderService {
     @Autowired private OrderSuggestedReelsRepository orderSuggestedReelsRepository;
     @Autowired private ProductionDetailRepository productionDetailRepository;
 
+    @Autowired private ClientRepository clientRepository;
+
     @Transactional
     public SuggestedReelsResponseDTO createOrder(OrderDTO dto) {
         Order order = createAndSaveOrder(dto);
@@ -304,9 +306,6 @@ public class OrderService {
                 .findByClientNormalizerAndSizeAndProduct(order.getNormalizedClient(), order.getSize(),order.getProductName())
                 .orElse(null);
 
-        order.setMaterialGrade(sr.getPaperTypeBottom());
-
-        orderRepository.save(order);
 
         if (sr == null) {
             return createEmptyResponse("Order created — no suggested reels found");
@@ -498,6 +497,9 @@ public class OrderService {
     // ---------- Private Helpers ----------
 
     private Order createAndSaveOrder(OrderDTO orderDTO) {
+
+        Optional<Clients> client = clientRepository.findByClientNormalizerAndSize(orderDTO.getClient(),orderDTO.getSize());
+
         Order order = new Order();
         order.setClient(orderDTO.getClient());
         order.setCreatedAt(ZonedDateTime.now(IST_ZONE));
@@ -505,6 +507,7 @@ public class OrderService {
         order.setCreatedBy(orderDTO.getCreatedBy());
         order.setSize(orderDTO.getSize());
         order.setStatus(OrderStatus.TODO);
+        order.setMaterialGrade(client.get().getPaperTypeBottom());
         order.setDeliveryAddress(orderDTO.getDeliveryAddress());
         order.setQuantity(orderDTO.getQuantity());
         order.setExpectedCompletionDate(orderDTO.getExpectedCompletionDate());
