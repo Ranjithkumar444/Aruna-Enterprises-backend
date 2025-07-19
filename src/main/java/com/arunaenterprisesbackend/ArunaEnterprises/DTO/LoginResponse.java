@@ -2,21 +2,17 @@ package com.arunaenterprisesbackend.ArunaEnterprises.DTO;
 
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Admin;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.AdminRole;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
-@Data
-@NoArgsConstructor
+@Getter
+@Setter
 @AllArgsConstructor
+@NoArgsConstructor
 public class LoginResponse {
     private String token;
+    private String message;
     private Admin admin;
-    private AdminRole role;
 
-    public LoginResponse(String token, Admin admin) {
-        this.token = token;
-        this.admin = admin;
-        this.role = admin.getRole();
+    public LoginResponse(Object o, String s) {
     }
 }

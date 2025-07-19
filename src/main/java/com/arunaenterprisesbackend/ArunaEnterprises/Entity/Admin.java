@@ -29,4 +29,8 @@ public class Admin {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private AdminRole role;
+
+    @Column(nullable = false)
+    private boolean active = true;
 }
+

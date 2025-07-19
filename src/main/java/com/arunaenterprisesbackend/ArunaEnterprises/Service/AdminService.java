@@ -49,4 +49,15 @@ public class AdminService {
             throw new RuntimeException("Contact not found with id: " + id);
         }
     }
+
+    public boolean deactivateAdmin(Long id) {
+        Optional<Admin> adminOpt = adminRepository.findById(id);
+        if (adminOpt.isPresent()) {
+            Admin admin = adminOpt.get();
+            admin.setActive(false);
+            adminRepository.save(admin);
+            return true;
+        }
+        return false;
+    }
 }

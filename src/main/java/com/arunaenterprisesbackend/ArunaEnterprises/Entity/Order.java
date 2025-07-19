@@ -30,6 +30,8 @@ public class Order {
 
     private String typeOfProduct;
 
+    private String productName;
+
     private int quantity;
 
     private String size;

@@ -7,4 +7,6 @@ import java.util.Optional;
 
 public interface ClientRepository extends JpaRepository<Clients,Long> {
     Optional<Clients> findByClientNormalizerAndSize(String clientNormalizer, String size);
+    Optional<Clients> findByClientNormalizerAndSizeAndProduct(String clientNormalizer, String size,String product);
+
 }

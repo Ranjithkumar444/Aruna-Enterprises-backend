@@ -63,26 +63,32 @@ public class AdminController {
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@RequestBody Admin admin) {
         try {
-            String email = adminService.verify(admin); // Authenticates the user
-            Admin existingUser = adminRepository.findByEmail(email); // Retrieve admin to get their role
+            String email = adminService.verify(admin);
+            Admin existingUser = adminRepository.findByEmail(email);
 
             if (existingUser == null) {
-                // This case should ideally be handled by adminService.verify
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
             }
 
-            String token = jwtService.generateToken(email); // Token now includes the role
-            // LoginResponse now directly gets the role from the existingUser
-            LoginResponse response = new LoginResponse(token, existingUser);
+            if (!existingUser.isActive()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new LoginResponse(null, "Your account is deactivated. Please contact admin."));
+            }
+
+            String token = jwtService.generateToken(email);
+            // ✅ Include admin details in the response
+            LoginResponse response = new LoginResponse(token, "Login successful", existingUser);
             return ResponseEntity.ok(response);
+
         } catch (RuntimeException e) {
-            // Catches UsernameNotFoundException, BadCredentialsException from AdminService.verify
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new LoginResponse(null, "Invalid credentials", null));
         }
     }
 
+
     @PostMapping("/create")
-    @PreAuthorize("hasRole('SUPER_ADMIN')") // Only a SUPER_ADMIN can call this endpoint
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<?> createAdmin(@RequestBody CreateAdminRequestDTO createAdminRequest) {
         if (adminRepository.existsByEmail(createAdminRequest.getEmail())) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
@@ -97,6 +103,7 @@ public class AdminController {
         newAdmin.setPhoneNumber(createAdminRequest.getPhoneNumber());
         newAdmin.setGender(createAdminRequest.getGender());
         newAdmin.setPassword(passwordEncoder.encode(createAdminRequest.getPassword()));
+        newAdmin.setActive(true);
 
         if (createAdminRequest.getRole() == null ||
                 (createAdminRequest.getRole() != AdminRole.ROLE_ADMIN && createAdminRequest.getRole() != AdminRole.ROLE_SUPER_ADMIN)) {
@@ -175,6 +182,17 @@ public class AdminController {
         contactRepository.save(message);
 
         return ResponseEntity.ok("Reply status updated successfully");
+    }
+
+    @PutMapping("/deactivate/{id}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN')")
+    public ResponseEntity<String> deactivateAdmin(@PathVariable Long id) {
+        boolean success = adminService.deactivateAdmin(id);
+        if (success) {
+            return ResponseEntity.ok("Admin deactivated successfully.");
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Admin not found.");
+        }
     }
 
 }

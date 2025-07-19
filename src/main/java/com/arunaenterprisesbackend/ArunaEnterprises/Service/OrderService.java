@@ -301,8 +301,12 @@ public class OrderService {
         Order order = createAndSaveOrder(dto);
 
         SuggestedReel sr = suggestedReelRepository
-                .findByClientNormalizerAndSize(order.getNormalizedClient(), order.getSize())
+                .findByClientNormalizerAndSizeAndProduct(order.getNormalizedClient(), order.getSize(),order.getProductName())
                 .orElse(null);
+
+        order.setMaterialGrade(sr.getPaperTypeBottom());
+
+        orderRepository.save(order);
 
         if (sr == null) {
             return createEmptyResponse("Order created — no suggested reels found");
@@ -353,7 +357,7 @@ public class OrderService {
             }
         }
 
-        Optional<SuggestedReel> srr = suggestedReelRepository.findByClientNormalizerAndSize(order.getNormalizedClient(), order.getSize());
+        Optional<SuggestedReel> srr = suggestedReelRepository.findByClientNormalizerAndSizeAndProduct(order.getNormalizedClient(), order.getSize(),order.getProductName());
         SuggestedReel suggestedreel = srr.get();
 
         double dkl = suggestedreel.getDeckle();
@@ -377,9 +381,9 @@ public class OrderService {
         ProductionDetail prddetail = new ProductionDetail();
         prddetail.setClient(order.getClient());
         prddetail.setClientNormalizer(sr.getClientNormalizer());
-        prddetail.setTotalTopWeightReq(toptotalweight+30);
-        prddetail.setTotalLinerWeightReq(linertotalweight + 30);
-        prddetail.setTotalFluteWeightReq(flutetotalweight+30);
+        prddetail.setTotalTopWeightReq(toptotalweight);
+        prddetail.setTotalLinerWeightReq(linertotalweight);
+        prddetail.setTotalFluteWeightReq(flutetotalweight);
         prddetail.setProductType(dto.getProductType());
         prddetail.setTypeOfProduct(dto.getTypeOfProduct());
         prddetail.setSize(dto.getSize());
@@ -505,7 +509,6 @@ public class OrderService {
         order.setQuantity(orderDTO.getQuantity());
         order.setExpectedCompletionDate(orderDTO.getExpectedCompletionDate());
         order.setProductType(orderDTO.getProductType());
-        order.setMaterialGrade(orderDTO.getMaterialGrade());
         order.setUpdatedAt(ZonedDateTime.now(IST_ZONE));
         order.setUnit(orderDTO.getUnit());
         order.setTransportNumber(orderDTO.getTransportNumber());
@@ -529,14 +532,12 @@ public class OrderService {
                 .filter(r -> r.getGsm() == gsm)
                 .collect(Collectors.toList());
 
-        List<Reel> nearGsm = exactGsm;
-
-//        List<Reel> nearGsm = exactGsm.isEmpty()
-//                ? candidates.stream()
-//                .filter(r -> r.getGsm() < gsm && (gsm - r.getGsm()) <= 20)
-//                .sorted(Comparator.comparingInt(r -> gsm - r.getGsm()))
-//                .toList()
-//                : exactGsm;
+        List<Reel> nearGsm = exactGsm.isEmpty()
+                ? candidates.stream()
+                .filter(r -> r.getGsm() < gsm && (gsm - r.getGsm()) <= 20)
+                .sorted(Comparator.comparingInt(r -> gsm - r.getGsm()))
+                .toList()
+                : exactGsm;
 
         return nearGsm.stream()
                 .sorted(Comparator.comparingDouble(r -> Math.abs(r.getDeckle() - deckle)))
