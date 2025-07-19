@@ -310,13 +310,10 @@ public class OrderService {
 
         // If oneUps is small (say < 65), try all 2ups, 3ups, 4ups
         List<Double> candidateDeckles = new ArrayList<>();
-        if (sr.getOneUps() < 65.0) {
-            if (sr.getTwoUps() > 0) candidateDeckles.add(sr.getTwoUps());
-            if (sr.getThreeUps() > 0) candidateDeckles.add(sr.getThreeUps());
-            if (sr.getFourUps() > 0) candidateDeckles.add(sr.getFourUps());
-        } else {
-            candidateDeckles.add(sr.getOneUps());
-        }
+        candidateDeckles.add(sr.getTwoUps());
+        candidateDeckles.add(sr.getThreeUps());
+        candidateDeckles.add(sr.getFourUps());
+        candidateDeckles.add(sr.getOneUps());
 
         OrderSuggestedReels osr = new OrderSuggestedReels();
         osr.setOrder(order);
@@ -346,7 +343,7 @@ public class OrderService {
             // Deduplicate by reelNo or barcodeId if needed
             bestItems = bestItems.stream()
                     .distinct()
-                    .limit(10)
+                    .limit(50)
                     .toList();
 
             switch (layer) {
@@ -521,7 +518,7 @@ public class OrderService {
 
     private List<SuggestedReelItem> findTopReels(int gsm, int deckle) {
         double minDeckle = deckle;
-        double maxDeckle = deckle + 5.0;
+        double maxDeckle = deckle + 3.0;
 
         List<Reel> candidates = reelRepository.findAvailableByDeckleRange(
                 minDeckle, maxDeckle,
@@ -532,12 +529,14 @@ public class OrderService {
                 .filter(r -> r.getGsm() == gsm)
                 .collect(Collectors.toList());
 
-        List<Reel> nearGsm = exactGsm.isEmpty()
-                ? candidates.stream()
-                .filter(r -> r.getGsm() < gsm && (gsm - r.getGsm()) <= 20)
-                .sorted(Comparator.comparingInt(r -> gsm - r.getGsm()))
-                .toList()
-                : exactGsm;
+        List<Reel> nearGsm = exactGsm;
+
+//        List<Reel> nearGsm = exactGsm.isEmpty()
+//                ? candidates.stream()
+//                .filter(r -> r.getGsm() < gsm && (gsm - r.getGsm()) <= 20)
+//                .sorted(Comparator.comparingInt(r -> gsm - r.getGsm()))
+//                .toList()
+//                : exactGsm;
 
         return nearGsm.stream()
                 .sorted(Comparator.comparingDouble(r -> Math.abs(r.getDeckle() - deckle)))
