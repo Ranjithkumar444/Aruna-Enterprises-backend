@@ -23,7 +23,7 @@ public class Clients {
     private String clientNormalizer;
 
     private String product;
-
+    private String productNormalizer;
     private String productType;
     private String size;
     private String ply;
@@ -38,6 +38,11 @@ public class Clients {
     private String paperTypeTop;
     private String paperTypeBottom;
     private String paperTypeFlute;
+
+    private String paperTypeTopNorm;
+    private String paperTypeBottomNorm;
+    private String paperTypeFluteNorm;
+
     private double oneUps;
     private double twoUps;
     private double threeUps;
@@ -48,4 +53,12 @@ public class Clients {
     private double sellingPricePerBox;
 
     private double productionCostPerBox;
+
+    private double fiveUps;
+    private double sixUps;
+
+    private double cuttingLengthOneUps;
+    private double cuttingLengthTwoUps;
+
+    private String piece;
 }

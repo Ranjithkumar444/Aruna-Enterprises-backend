@@ -8,9 +8,14 @@ import com.arunaenterprisesbackend.ArunaEnterprises.Utility.BarcodeGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.ReelStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.InputStream;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.List;
+
 
 @Service
 public class ReelService {
@@ -32,6 +37,7 @@ public class ReelService {
         reel.setReelNo(reeldata.getReelNo());
         reel.setPreviousWeight(reeldata.getInitialWeight());
         reel.setSupplierName(reeldata.getSupplierName());
+        reel.setPaperTypeNormalized(reeldata.getPaperType().toLowerCase().replaceAll("[^a-z0-9]", ""));
         reel.setUnit(reeldata.getUnit());
         reel.setPaperType(reeldata.getPaperType());
 
@@ -51,5 +57,4 @@ public class ReelService {
 
         return new ReelRegistrationResponseDTO(barcodeId);
     }
-
 }

@@ -19,6 +19,5 @@ public interface SuggestedReelRepository extends JpaRepository<SuggestedReel, Lo
     @Query("SELECT DISTINCT s.client FROM SuggestedReel s")
     List<String> findAllDistinctClients();
 
-    Optional<SuggestedReel> findByClientNormalizerAndSizeAndProduct(String normalizedClient, String size, String productName);
-
+    Optional<SuggestedReel> findByClientNormalizerAndSizeAndProductNormalizer(String normalizedClient, String size, String productNormalizer);
 }

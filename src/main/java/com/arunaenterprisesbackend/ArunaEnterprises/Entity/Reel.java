@@ -67,6 +67,6 @@ public class Reel {
 
     private String reelSet;
 
+    private String paperTypeNormalized;
 //    private String twoSheetOneBoxReelSet;
 }
-

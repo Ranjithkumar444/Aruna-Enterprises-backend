@@ -60,5 +60,14 @@ public interface ReelRepository extends JpaRepository<Reel, Long> {
     @Query("SELECT r FROM Reel r WHERE r.reelSet = ?1 ORDER BY r.reelNo")
     List<Reel> findByReelSet(String reelSet);
 
+    @Query("SELECT r FROM Reel r WHERE " +
+            "r.deckle BETWEEN :minDeckle AND :maxDeckle AND " +
+            "r.paperTypeNormalized = :paperTypeNorm AND " +
+            "r.status IN :statuses")
+    List<Reel> findAvailableByDeckleRangeAndPaperTypeNorm(
+            @Param("minDeckle") double minDeckle,
+            @Param("maxDeckle") double maxDeckle,
+            @Param("paperTypeNorm") String paperTypeNorm,
+            @Param("statuses") List<ReelStatus> statuses);
 
 }

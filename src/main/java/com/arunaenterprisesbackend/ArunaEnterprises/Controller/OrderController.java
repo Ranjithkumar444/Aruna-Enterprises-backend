@@ -57,6 +57,12 @@ public class OrderController {
         }
     }
 
+    @GetMapping("/{orderId}/production-detail")
+    public ResponseEntity<ProductionDetail> getProductionDetailByOrderId(@PathVariable Long orderId) {
+        ProductionDetail pd = orderservice.getProductionDetailByOrderId(orderId);
+        return ResponseEntity.ok(pd);
+    }
+
 
     @PostMapping("/order/split")
     public ResponseEntity<String> splitOrder(@RequestBody OrderSplitDTO dto) {
@@ -69,10 +75,15 @@ public class OrderController {
         }
     }
 
-    @GetMapping("/{orderId}/production-detail")
-    public ResponseEntity<ProductionDetail> getProductionDetailByOrderId(@PathVariable Long orderId) {
-        ProductionDetail pd = orderservice.getProductionDetailByOrderId(orderId);
-        return ResponseEntity.ok(pd);
+    @GetMapping("/order/getInStockCompletedOrders")
+    public ResponseEntity<List<Order>> getAllInStockCompletedOrder(){
+        try{
+            List<Order> orders = orderRepository.findByStatus(OrderStatus.COMPLETED);
+
+            return ResponseEntity.ok().body(orders);
+        } catch (Exception e) {
+            return (ResponseEntity<List<Order>>) ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
 

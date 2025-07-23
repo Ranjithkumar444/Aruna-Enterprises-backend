@@ -3,6 +3,7 @@ package com.arunaenterprisesbackend.ArunaEnterprises.Controller;
 import com.arunaenterprisesbackend.ArunaEnterprises.DTO.*;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.*;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.*;
+import com.arunaenterprisesbackend.ArunaEnterprises.Service.JWTService;
 import com.arunaenterprisesbackend.ArunaEnterprises.Service.ReelService;
 import com.arunaenterprisesbackend.ArunaEnterprises.Service.ReelStockAlertService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +13,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -27,20 +29,52 @@ public class ReelController {
     @Autowired
     private ReelRepository reelRepository;
 
-    @Autowired private ReelStockThresholdRepository repository;
-
-    @Autowired
-    private ReelStockAlertRepository reelStockAlertRepository;
-
-
     @Autowired
     private OrderReelUsageRepository orderReelUsageRepository;
 
     @Autowired
     private ReelUsageHistoryRepository reelUsageHistoryRepository;
 
+    @Autowired private ReelStockThresholdRepository repository;
+
+    @Autowired
+    private ReelStockAlertRepository reelStockAlertRepository;
+
     @Autowired
     private ReelStockAlertService reelStockAlertService;
+
+    @Autowired private JWTService jwtService;
+
+    @PostMapping("/reel/stock/alert")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ResponseEntity<?> createThreshold(@RequestBody ReelStockThreshold threshold) {
+        Optional<ReelStockThreshold> existing = repository.findByDeckleAndGsmAndUnit(
+                threshold.getDeckle(), threshold.getGsm(), threshold.getUnit());
+
+        if (existing.isPresent()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Threshold already exists for this Deckle, GSM and Unit");
+        }
+
+        return ResponseEntity.ok(repository.save(threshold));
+    }
+
+    @PostMapping("/reel/stock/alert/trigger")
+    public ResponseEntity<?> manualCheck() {
+        reelStockAlertService.checkAndGenerateStockAlerts();
+        return ResponseEntity.ok("Stock check triggered manually.");
+    }
+
+
+
+    @GetMapping("/reel/stock/alert/getAll")
+    public List<ReelStockThreshold> getAllThresholds() {
+        return repository.findAll();
+    }
+
+    @GetMapping("/reel/stock/alert/view")
+    public List<ReelStockAlert> getUnacknowledgedAlerts() {
+        return reelStockAlertRepository.findByAcknowledgedFalse();
+    }
 
 
     @PostMapping("/register-reel")
@@ -54,6 +88,8 @@ public class ReelController {
                     .body(null);
         }
     }
+
+
 
     @GetMapping("/barcode/{barcodeId}")
     public ResponseEntity<byte[]> getBarcodeImage(@PathVariable String barcodeId) {
@@ -93,9 +129,11 @@ public class ReelController {
     public ResponseEntity<?> getBarcodeimage(@PathVariable String id) {
         Reel reel;
         try {
+            // Try to parse as Long first (for reelNo)
             Long reelNo = Long.valueOf(id);
             reel = reelRepository.findByReelNo(reelNo);
         } catch (NumberFormatException e) {
+            // If not a number, search by barcodeId
             reel = reelRepository.findByBarcodeId(id);
         }
 
@@ -180,6 +218,7 @@ public class ReelController {
         }
     }
 
+
     @GetMapping("/reel/active/by-barcode/{barcodeId}")
     public ResponseEntity<?> getAllActiveOrderReelUsageByBarcode(@PathVariable String barcodeId) {
         try {
@@ -229,6 +268,7 @@ public class ReelController {
 
         return response;
     }
+
     @GetMapping("/inventory/getInUseReelsWithDetails")
     public ResponseEntity<List<ReelWithUsageDetailsDTO>> getInUseReelsWithDetails() {
         List<Reel> reels = reelRepository.findByStatusIn(List.of(ReelStatus.IN_USE));
@@ -377,38 +417,6 @@ public class ReelController {
         }
 
         return ResponseEntity.ok(usageHistoryList);
-    }
-
-
-    @PostMapping("/reel/stock/alert")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
-    public ResponseEntity<?> createThreshold(@RequestBody ReelStockThreshold threshold) {
-        Optional<ReelStockThreshold> existing = repository.findByDeckleAndGsmAndUnit(
-                threshold.getDeckle(), threshold.getGsm(), threshold.getUnit());
-
-        if (existing.isPresent()) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("Threshold already exists for this Deckle, GSM and Unit");
-        }
-
-        return ResponseEntity.ok(repository.save(threshold));
-    }
-
-    @PostMapping("/reel/stock/alert/trigger")
-    public ResponseEntity<?> manualCheck() {
-        reelStockAlertService.checkAndGenerateStockAlerts();
-        return ResponseEntity.ok("Stock check triggered manually.");
-    }
-
-
-
-    @GetMapping("/reel/stock/alert/getAll")
-    public List<ReelStockThreshold> getAllThresholds() {
-        return repository.findAll();
-    }
-
-    @GetMapping("/reel/stock/alert/view")
-    public List<ReelStockAlert> getUnacknowledgedAlerts() {
-        return reelStockAlertRepository.findByAcknowledgedFalse();
     }
 
 }

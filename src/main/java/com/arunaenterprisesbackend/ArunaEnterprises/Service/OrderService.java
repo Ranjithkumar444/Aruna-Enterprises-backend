@@ -295,21 +295,30 @@ public class OrderService {
     @Autowired private ReelRepository reelRepository;
     @Autowired private OrderSuggestedReelsRepository orderSuggestedReelsRepository;
     @Autowired private ProductionDetailRepository productionDetailRepository;
-
     @Autowired private ClientRepository clientRepository;
 
     @Transactional
     public SuggestedReelsResponseDTO createOrder(OrderDTO dto) {
         Order order = createAndSaveOrder(dto);
 
-        SuggestedReel sr = suggestedReelRepository
-                .findByClientNormalizerAndSizeAndProduct(order.getNormalizedClient(), order.getSize(),order.getProductName())
-                .orElse(null);
+        Optional<SuggestedReel> sropt =  suggestedReelRepository
+                .findByClientNormalizerAndSizeAndProductNormalizer(order.getNormalizedClient(), order.getSize(), order.getProductName().toLowerCase().replaceAll("[^a-z0-9]", ""));
 
+        SuggestedReel sr = sropt.orElseThrow(() ->
+                new RuntimeException("No suggested reel configuration found for this order"));
 
         if (sr == null) {
             return createEmptyResponse("Order created — no suggested reels found");
         }
+
+        String topPaperType = sr.getPaperTypeTop();
+        String linerPaperType = sr.getPaperTypeBottom();
+        String flutePaperType = sr.getPaperTypeFlute();
+
+        String topPaperTypeNorm = sr.getPaperTypeTop().toLowerCase().replaceAll("\\s+", "");
+        String linerPaperTypeNorm = sr.getPaperTypeBottom().toLowerCase().replaceAll("\\s+", "");
+        String flutePaperTypeNorm = sr.getPaperTypeFlute().toLowerCase().replaceAll("\\s+", "");
+
 
         // If oneUps is small (say < 65), try all 2ups, 3ups, 4ups
         List<Double> candidateDeckles = new ArrayList<>();
@@ -318,16 +327,15 @@ public class OrderService {
         candidateDeckles.add(sr.getFourUps());
         candidateDeckles.add(sr.getOneUps());
 
+
         OrderSuggestedReels osr = new OrderSuggestedReels();
         osr.setOrder(order);
         osr.setUsedDeckle(Collections.max(candidateDeckles));
 
         boolean needsFlute = sr.getFluteGsm() != sr.getLinerGsm();
 
-
-
         for (String layer : List.of("TOP", "BOTTOM", "FLUTE")) {
-            if (layer.equals("FLUTE") && !needsFlute) break;
+            if (layer.equals("FLUTE") && !needsFlute) continue;
 
             int targetGsm = switch (layer) {
                 case "TOP" -> sr.getTopGsm();
@@ -335,15 +343,21 @@ public class OrderService {
                 default -> sr.getFluteGsm();
             };
 
+            String paperTypeNorm = switch (layer) {
+                case "TOP" -> sr.getPaperTypeTopNorm();
+                case "BOTTOM" -> sr.getPaperTypeBottomNorm();
+                default -> sr.getPaperTypeFluteNorm();
+            };
+
             List<SuggestedReelItem> bestItems = new ArrayList<>();
 
             for (Double rawDeckle : candidateDeckles) {
                 int deckle = (int) Math.floor(rawDeckle);
-                List<SuggestedReelItem> found = findTopReels(targetGsm, deckle);
+                List<SuggestedReelItem> found = findTopReels(targetGsm, deckle, paperTypeNorm);
                 bestItems.addAll(found);
             }
 
-            // Deduplicate by reelNo or barcodeId if needed
+            // Deduplicate and limit
             bestItems = bestItems.stream()
                     .distinct()
                     .limit(50)
@@ -356,7 +370,7 @@ public class OrderService {
             }
         }
 
-        Optional<SuggestedReel> srr = suggestedReelRepository.findByClientNormalizerAndSizeAndProduct(order.getNormalizedClient(), order.getSize(),order.getProductName());
+        Optional<SuggestedReel> srr = suggestedReelRepository.findByClientNormalizerAndSizeAndProductNormalizer(order.getNormalizedClient(), order.getSize(),order.getProductName().toLowerCase().replaceAll("[^a-z0-9]", ""));
         SuggestedReel suggestedreel = srr.get();
 
         double dkl = suggestedreel.getDeckle();
@@ -416,6 +430,7 @@ public class OrderService {
         prddetail.setDeckle(sr.getDeckle());
 
         productionDetailRepository.save(prddetail);
+        order.setProductionDetail(prddetail);
         orderRepository.save(order);
 
         return new SuggestedReelsResponseDTO(
@@ -434,7 +449,11 @@ public class OrderService {
 
         ProductionDetail pd = order.getProductionDetail();
         if (pd == null) {
-            throw new RuntimeException("Production detail not found for Order ID: " + orderId);
+            pd = new ProductionDetail();
+            pd.setOrder(order);
+            productionDetailRepository.save(pd);
+            order.setProductionDetail(pd);
+            orderRepository.save(order);
         }
         return pd;
     }
@@ -453,48 +472,33 @@ public class OrderService {
         return mapToResponse(suggestions);
     }
 
-    @Transactional
     public void updateOrderStatus(Long orderId, OrderStatus newStatus, String transportNumber) {
-        try {
-            Order order = orderRepository.findById(orderId)
-                    .orElseThrow(() -> new OrderNotFoundException("Order not found with id: " + orderId));
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
 
-            ZonedDateTime now = ZonedDateTime.now(IST_ZONE);
-            order.setUpdatedAt(now);
-            order.setStatus(newStatus);
+        ZonedDateTime now = ZonedDateTime.now(IST_ZONE);
+        order.setUpdatedAt(now);
+        order.setStatus(newStatus);
 
-            switch (newStatus) {
-                case COMPLETED -> {
-                    order.setCompletedAt(now);
-                    order.setShippedAt(null);
-                    order.setTransportNumber(null);
-                    try {
-                        orderSuggestedReelsRepository.deleteByOrder(order);
-                    } catch (Exception e) {
-                    }
-                }
-                case SHIPPED -> {
-                    order.setShippedAt(now);
-                    order.setTransportNumber(transportNumber);
-
-                    try {
-                        orderSuggestedReelsRepository.deleteByOrder(order);
-                    } catch (Exception e) {
-                    }
-                }
-                default -> {
-                    order.setCompletedAt(null);
-                    order.setShippedAt(null);
-                    order.setTransportNumber(null);
-                }
+        switch (newStatus) {
+            case COMPLETED -> {
+                order.setCompletedAt(now);
+                order.setShippedAt(null);
+                order.setTransportNumber(null);
             }
-
-            orderRepository.save(order);
-        } catch (Exception e) {
-            throw e; // Re-throw to maintain transactional behavior
+            case SHIPPED -> {
+                order.setShippedAt(now);
+                order.setTransportNumber(transportNumber);
+            }
+            default -> {
+                order.setCompletedAt(null);
+                order.setShippedAt(null);
+                order.setTransportNumber(null);
+            }
         }
+
+        orderRepository.save(order);
     }
-    // ---------- Private Helpers ----------
 
     private Order createAndSaveOrder(OrderDTO orderDTO) {
 
@@ -509,8 +513,8 @@ public class OrderService {
         order.setQuantity(orderDTO.getQuantity());
         order.setExpectedCompletionDate(orderDTO.getExpectedCompletionDate());
         order.setProductType(orderDTO.getProductType());
-        order.setUpdatedAt(ZonedDateTime.now(IST_ZONE));
         order.setProductName(orderDTO.getProductName());
+        order.setUpdatedAt(ZonedDateTime.now(IST_ZONE));
         order.setUnit(orderDTO.getUnit());
         order.setTransportNumber(orderDTO.getTransportNumber());
 
@@ -520,31 +524,91 @@ public class OrderService {
         return orderRepository.save(order);
     }
 
-    private List<SuggestedReelItem> findTopReels(int gsm, int deckle) {
+
+//    private List<SuggestedReelItem> findTopReels(int gsm, int deckle, String paperType) {
+//        double minDeckle = (int) Math.floor(deckle);
+//        double maxDeckle = (int) Math.floor(deckle + 3.0);
+//
+//        List<Reel> candidates = reelRepository.findAvailableByDeckleRange(
+//                minDeckle, maxDeckle,
+//                List.of(ReelStatus.NOT_IN_USE, ReelStatus.PARTIALLY_USED_AVAILABLE)
+//        );
+//
+//        // Normalize paper type for comparison (optional but good for robustness)
+//        String normalizedTargetPaperType = paperType;
+//
+//        // Filter candidates matching all: GSM + paper type
+//        List<Reel> exactMatch = candidates.stream()
+//                .filter(r -> r.getGsm() == gsm)
+//                .filter(r -> {
+//                    String reelPaperType = r.getPaperTypeNormalized() != null ? r.getPaperTypeNormalized() : "";
+//                    return reelPaperType.equals(normalizedTargetPaperType);
+//                })
+//                .collect(Collectors.toList());
+//
+//        // If no exact GSM match, try near GSM (<= 20 diff) but keep paper type fixed
+//        List<Reel> nearMatch = exactMatch.isEmpty()
+//                ? candidates.stream()
+//                .filter(r -> r.getGsm() < gsm && (gsm - r.getGsm()) <= 20)
+//                .sorted(Comparator.comparingInt(r -> gsm - r.getGsm()))
+//                .toList()
+//                : exactMatch;
+//
+//        return nearMatch.stream()
+//                .sorted(Comparator.comparingDouble(r -> Math.abs(r.getDeckle() - deckle)))
+//                .map(r -> new SuggestedReelItem(
+//                        r.getBarcodeId(),
+//                        r.getReelNo(),
+//                        r.getGsm(),
+//                        r.getDeckle(),
+//                        r.getCurrentWeight(),
+//                        r.getUnit(),
+//                        r.getStatus(),
+//                        r.getReelSet()
+//                ))
+//                .collect(Collectors.toList());
+//    }
+
+    private List<SuggestedReelItem> findTopReels(int gsm, int deckle, String paperTypeNorm) {
+        if (paperTypeNorm == null || paperTypeNorm.isBlank()) {
+            return Collections.emptyList();
+        }
+
         double minDeckle = deckle;
         double maxDeckle = deckle + 3.0;
 
-        List<Reel> candidates = reelRepository.findAvailableByDeckleRange(
+        // First find by exact paper type match
+        List<Reel> candidates = reelRepository.findAvailableByDeckleRangeAndPaperTypeNorm(
                 minDeckle, maxDeckle,
+                paperTypeNorm,
                 List.of(ReelStatus.NOT_IN_USE, ReelStatus.PARTIALLY_USED_AVAILABLE)
         );
 
-        List<Reel> exactGsm = candidates.stream()
+        // Then filter by GSM
+        List<Reel> exactMatch = candidates.stream()
                 .filter(r -> r.getGsm() == gsm)
+                .sorted(Comparator.comparingDouble(r -> Math.abs(r.getDeckle() - deckle)))
                 .collect(Collectors.toList());
 
-        List<Reel> nearGsm = exactGsm.isEmpty()
-                ? candidates.stream()
-                .filter(r -> r.getGsm() < gsm && (gsm - r.getGsm()) <= 20)
-                .sorted(Comparator.comparingInt(r -> gsm - r.getGsm()))
-                .toList()
-                : exactGsm;
+        // If no exact GSM match, try near GSM
+        if (exactMatch.isEmpty()) {
+            exactMatch = candidates.stream()
+                    .filter(r -> Math.abs(r.getGsm() - gsm) <= 20) // ±20 GSM tolerance
+                    .sorted(Comparator.comparingInt(r -> Math.abs(r.getGsm() - gsm)))
+                    .sorted(Comparator.comparingDouble(r -> Math.abs(r.getDeckle() - deckle)))
+                    .collect(Collectors.toList());
+        }
 
-        return nearGsm.stream()
-                .sorted(Comparator.comparingDouble(r -> Math.abs(r.getDeckle() - deckle)))
+        return exactMatch.stream()
                 .map(r -> new SuggestedReelItem(
-                        r.getBarcodeId(), r.getReelNo(), r.getGsm(), r.getDeckle(),
-                        r.getCurrentWeight(), r.getUnit(), r.getStatus(), r.getReelSet()
+                        r.getBarcodeId(),
+                        r.getReelNo(),
+                        r.getGsm(),
+                        r.getDeckle(),
+                        r.getCurrentWeight(),
+                        r.getUnit(),
+                        r.getStatus(),
+                        r.getReelSet()
                 ))
                 .collect(Collectors.toList());
     }
@@ -588,7 +652,6 @@ public class OrderService {
                     dto.setUnit(i.getUnit());
                     dto.setReelSet(i.getReelSet());
                     dto.setStatus(i.getStatus());
-                    dto.setPaperTypeFlute(sr.getPaperTypeFlute());
                     dto.setCuttingLength(sr.getCuttingLength());
                     return dto;
                 })
@@ -620,6 +683,7 @@ public class OrderService {
         response.setFluteGsmReels(Collections.emptyList());
         response.setFluteRequired(false);
         response.setMessage(message);
+        response.setOrderid(0);
         return response;
     }
 
@@ -651,6 +715,4 @@ public class OrderService {
 
         orderRepository.save(newOrder);
     }
-
-
 }

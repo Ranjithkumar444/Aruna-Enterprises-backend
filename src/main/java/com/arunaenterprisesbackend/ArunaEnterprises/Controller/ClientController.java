@@ -1,8 +1,12 @@
 package com.arunaenterprisesbackend.ArunaEnterprises.Controller;
 
+import com.arunaenterprisesbackend.ArunaEnterprises.DTO.CourgatedClientDTO;
+import com.arunaenterprisesbackend.ArunaEnterprises.DTO.PunchingClientDTO;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Clients;
+import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Machine;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.SuggestedReel;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.ClientRepository;
+import com.arunaenterprisesbackend.ArunaEnterprises.Repository.MachineRepository;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.SuggestedReelRepository;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +27,348 @@ public class ClientController {
 
     @Autowired
     private SuggestedReelRepository suggestedReelRepository;
+
+    @Autowired
+    private MachineRepository machineRepository;
+
+    @PostMapping("/client/corrugated/order/create")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ResponseEntity<String> CourgatedClientCreate(@RequestBody CourgatedClientDTO courgatedClientDTO){
+        Clients client = new Clients();
+
+        Machine machine = machineRepository.findByMachineName("Courgation");
+
+        if(machine == null){
+            machine = machineRepository.findByMachineName("courgation");
+        }
+
+        client.setClient(courgatedClientDTO.getClient());
+
+        String normalizedClient = courgatedClientDTO.getClient().toLowerCase().replaceAll("[^a-z0-9]", "");
+        String normalizedProduct = courgatedClientDTO.getProduct().toLowerCase().replaceAll("[^a-z0-9]", "");
+        client.setProductNormalizer(normalizedProduct);
+        client.setClientNormalizer(normalizedClient);
+        client.setFluteGsm(courgatedClientDTO.getFluteGsm());
+        client.setLinerGsm(courgatedClientDTO.getLinerGsm());
+        client.setMadeUpOf(courgatedClientDTO.getMadeUpOf());
+        client.setPaperTypeBottom(courgatedClientDTO.getPaperTypeBottom());
+        client.setPaperTypeTop(courgatedClientDTO.getPaperTypeTop());
+        client.setPly(courgatedClientDTO.getPly());
+        client.setTopGsm(courgatedClientDTO.getTopGsm());
+        client.setProduct(courgatedClientDTO.getProduct());
+        client.setSize(courgatedClientDTO.getSize());
+        client.setPaperTypeFlute(courgatedClientDTO.getPaperTypeFlute());
+        client.setBottomGsm(courgatedClientDTO.getLinerGsm());
+        client.setProductionCostPerBox(courgatedClientDTO.getProductionCostPerBox());
+        client.setSellingPricePerBox(courgatedClientDTO.getSellingPricePerBox());
+
+        client.setPaperTypeTopNorm(courgatedClientDTO.getPaperTypeTop().toLowerCase().replaceAll("[^a-z0-9]", ""));
+        client.setPaperTypeBottomNorm(courgatedClientDTO.getPaperTypeBottom().toLowerCase().replaceAll("[^a-z0-9]", ""));
+        client.setPaperTypeFluteNorm(courgatedClientDTO.getPaperTypeFlute().toLowerCase().replaceAll("[^a-z0-9]", ""));
+
+        String size = courgatedClientDTO.getSize();
+        String[] dimensions = size.split("X");
+
+        int[] arr = new int[dimensions.length];
+        for (int i = 0; i < dimensions.length; i++) {
+            arr[i] = Integer.parseInt(dimensions[i]);
+        }
+
+        client.setProductType("corrugated");
+
+        int l = arr[0];
+        int w = arr[1];
+        int h = arr.length > 2 ? arr[2] : 0;
+
+        String plyStr = courgatedClientDTO.getPly();
+        int plyNo = 0;
+
+        if (plyStr != null && plyStr.contains("-")) {
+            String[] parts = plyStr.split("-");
+            try {
+                plyNo = Integer.parseInt(parts[0]);
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid number format in ply: " + plyStr);
+            }
+        }
+
+        int dec = (plyNo == 9 || plyNo == 11 || plyNo == 7) ? (w + h + 30) : (w + h + 20);
+        double finalDeckle;
+
+        if(plyNo == 7 || plyNo == 9){
+            finalDeckle = Math.round((dec)/10.0);
+        }else{
+            finalDeckle = Math.floor((dec)/10.0);
+        }
+
+        client.setDeckle(finalDeckle);
+        client.setOneUps(finalDeckle);
+        client.setTwoUps(finalDeckle * 2);
+        client.setThreeUps(finalDeckle * 3);
+        client.setFourUps(finalDeckle * 4);
+        client.setFiveUps(finalDeckle*5);
+        client.setSixUps(finalDeckle*6);
+
+        double cuttingLength;
+        double baseCuttingLength = (2  * ( l +  w ) + 50 ) / 10.0;
+        if(baseCuttingLength <= machine.getMinCuttingLength()){
+            client.setPiece("Two Ups Cutting Length");
+            cuttingLength = baseCuttingLength * 2;
+        }
+        else if(baseCuttingLength >= machine.getMaxCuttingLength()){
+            cuttingLength = (l + w + 50) / 10.0;
+            client.setPiece("Two Piece Cutting Length");
+        }
+        else {
+            cuttingLength = baseCuttingLength;
+            client.setPiece("One Ups Cutting Length");
+        }
+        client.setCuttingLength(cuttingLength);
+        client.setCuttingLengthOneUps(cuttingLength);
+        client.setCuttingLengthTwoUps(cuttingLength*2);
+
+        client.setDescription(courgatedClientDTO.getDescription());
+        clientRepository.save(client);
+
+        Optional<Clients> clientsopt = clientRepository.findByClientNormalizerAndSize(normalizedClient, courgatedClientDTO.getSize());
+        Clients clients = clientsopt.get();
+
+        SuggestedReel reel = new SuggestedReel();
+        reel.setClient(clients.getClient());
+        reel.setClientNormalizer(clients.getClientNormalizer());
+        reel.setProduct(clients.getProduct());
+        reel.setProductNormalizer(normalizedProduct);
+        reel.setSize(clients.getSize());
+        reel.setPly(clients.getPly());
+        reel.setDeckle(clients.getDeckle());
+        reel.setCuttingLength(clients.getCuttingLength());
+        reel.setBottomGsm(clients.getLinerGsm());
+        reel.setTopGsm(clients.getTopGsm());
+        reel.setLinerGsm(clients.getLinerGsm());
+        reel.setFluteGsm(clients.getFluteGsm());
+        reel.setMadeUpOf(clients.getMadeUpOf());
+        reel.setPaperTypeTop(clients.getPaperTypeTop());
+        reel.setPaperTypeBottom(clients.getPaperTypeBottom());
+        reel.setOneUps(clients.getOneUps());
+        reel.setTwoUps(clients.getTwoUps());
+        reel.setThreeUps(clients.getThreeUps());
+        reel.setPaperTypeFlute(clients.getPaperTypeFlute());
+        reel.setFourUps(clients.getFourUps());
+        reel.setFiveUps(clients.getFiveUps());
+        reel.setSixUps(clients.getSixUps());
+        reel.setDescription(clients.getDescription());
+        reel.setProductionCostPerBox(clients.getProductionCostPerBox());
+        reel.setSellingPricePerBox(clients.getSellingPricePerBox());
+        reel.setCuttingLengthTwoUps(clients
+                .getCuttingLength()*2);
+        reel.setCuttingLengthOneUps(clients.getCuttingLength());
+
+        reel.setPaperTypeFluteNorm(clients.getPaperTypeFluteNorm());
+        reel.setPaperTypeTopNorm(clients.getPaperTypeTopNorm());
+        reel.setPaperTypeBottomNorm(clients.getPaperTypeBottomNorm());
+
+        suggestedReelRepository.save(reel);
+
+        return ResponseEntity.ok("Client and Suggested Reel created successfully.");
+    }
+
+    @PostMapping("/client/punching/order/create")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ResponseEntity<String> createPunchingClient(@RequestBody PunchingClientDTO punchingClientDTO) {
+        Clients client = new Clients();
+
+        // Set base fields from DTO
+        client.setClient(punchingClientDTO.getClient());
+        client.setProduct(punchingClientDTO.getProduct());
+        client.setSize(punchingClientDTO.getSize());
+        client.setPly(punchingClientDTO.getPly());
+        client.setTopGsm(punchingClientDTO.getTopGsm());
+        client.setLinerGsm(punchingClientDTO.getLinerGsm());
+        client.setBottomGsm(punchingClientDTO.getLinerGsm());
+        client.setFluteGsm(punchingClientDTO.getFluteGsm());
+        client.setMadeUpOf(punchingClientDTO.getMadeUpOf());
+        client.setPaperTypeTop(punchingClientDTO.getPaperTypeTop());
+        client.setPaperTypeBottom(punchingClientDTO.getPaperTypeBottom());
+        client.setPaperTypeFlute(punchingClientDTO.getPaperTypeFlute());
+        client.setDescription(punchingClientDTO.getDescription());
+        client.setProductionCostPerBox(punchingClientDTO.getProductionCostPerBox());
+        client.setSellingPricePerBox(punchingClientDTO.getSellingPricePerBox());
+
+        client.setPaperTypeTopNorm(punchingClientDTO.getPaperTypeTop().toLowerCase().replaceAll("[^a-z0-9]", ""));
+        client.setPaperTypeBottomNorm(punchingClientDTO.getPaperTypeBottom().toLowerCase().replaceAll("[^a-z0-9]", ""));
+        client.setPaperTypeFluteNorm(punchingClientDTO.getPaperTypeFlute().toLowerCase().replaceAll("[^a-z0-9]", ""));
+
+        // Normalize client name
+        String normalizedClient = punchingClientDTO.getClient().toLowerCase().replaceAll("[^a-z0-9]", "");
+        client.setClientNormalizer(normalizedClient);
+
+        // Set product type
+        client.setProductType("punching");
+
+        // Parse size string
+        String[] dimensions = punchingClientDTO.getSize().split("X");
+        int[] arr = new int[dimensions.length];
+        for (int i = 0; i < dimensions.length; i++) {
+            arr[i] = Integer.parseInt(dimensions[i].trim());
+        }
+
+        int l = arr[0];
+        int w = arr[1];
+        int h = arr.length > 2 ? arr[2] : 0;
+
+        // Ply and Deckle Calculation
+        String plyStr = punchingClientDTO.getPly();
+        int plyNo = 0;
+        if (plyStr != null && plyStr.contains("-")) {
+            try {
+                plyNo = Integer.parseInt(plyStr.split("-")[0]);
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid ply format: " + plyStr);
+            }
+        }
+
+
+        double finalDeckle = punchingClientDTO.getDeckle();
+
+        double cuttingLength = punchingClientDTO.getCuttingLength();
+
+        client.setDeckle(finalDeckle);
+        client.setCuttingLength(cuttingLength);
+
+        if(finalDeckle > 65) {
+            client.setPiece("2 Ups Deckle");
+        }else{
+            client.setPiece("1 Ups Deckle");
+        }
+
+        // Set UPS values
+        client.setOneUps(finalDeckle);
+        client.setTwoUps(finalDeckle * 2);
+        client.setThreeUps(finalDeckle * 3);
+        client.setFourUps(finalDeckle * 4);
+        client.setFiveUps(finalDeckle * 5);
+        client.setSixUps(finalDeckle * 6);
+
+        client.setCuttingLengthOneUps(cuttingLength);
+        client.setCuttingLengthTwoUps(cuttingLength * 2);
+
+        // Save to DB
+        clientRepository.save(client);
+
+        Optional<Clients> clientsopt = clientRepository.findByClientNormalizerAndSize(normalizedClient, punchingClientDTO.getSize());
+        Clients clients = clientsopt.get();
+
+        SuggestedReel reel = new SuggestedReel();
+        reel.setClient(clients.getClient());
+        reel.setClientNormalizer(clients.getClientNormalizer());
+        reel.setProduct(clients.getProduct());
+        reel.setSize(clients.getSize());
+        reel.setPly(clients.getPly());
+        reel.setDeckle(clients.getDeckle());
+        reel.setCuttingLength(clients.getCuttingLength());
+        reel.setBottomGsm(clients.getLinerGsm());
+        reel.setTopGsm(clients.getTopGsm());
+        reel.setLinerGsm(clients.getLinerGsm());
+        reel.setFluteGsm(clients.getFluteGsm());
+        reel.setMadeUpOf(clients.getMadeUpOf());
+        reel.setPaperTypeTop(clients.getPaperTypeTop());
+        reel.setPaperTypeBottom(clients.getPaperTypeBottom());
+        reel.setOneUps(clients.getOneUps());
+        reel.setTwoUps(clients.getTwoUps());
+        reel.setThreeUps(clients.getThreeUps());
+        reel.setPaperTypeFlute(clients.getPaperTypeFlute());
+        reel.setFourUps(clients.getFourUps());
+        reel.setFiveUps(clients.getFiveUps());
+        reel.setSixUps(clients.getSixUps());
+        reel.setDescription(clients.getDescription());
+        reel.setProductionCostPerBox(clients.getProductionCostPerBox());
+        reel.setSellingPricePerBox(clients.getSellingPricePerBox());
+        reel.setCuttingLengthTwoUps(clients
+                .getCuttingLength()*2);
+        reel.setCuttingLengthOneUps(clients.getCuttingLength());
+
+        reel.setPaperTypeFluteNorm(clients.getPaperTypeFluteNorm());
+        reel.setPaperTypeTopNorm(clients.getPaperTypeTopNorm());
+        reel.setPaperTypeBottomNorm(clients.getPaperTypeBottomNorm());
+
+        suggestedReelRepository.save(reel);
+
+        return ResponseEntity.ok("Punching client order saved successfully.");
+    }
+
+    @PutMapping("/client/corrugated/order/update/{id}")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ResponseEntity<String> editCorrugatedClient(@PathVariable Long id, @RequestBody CourgatedClientDTO dto) {
+        Optional<Clients> optionalClient = clientRepository.findById(id);
+        if (optionalClient.isEmpty()) return ResponseEntity.notFound().build();
+
+        Clients client = optionalClient.get();
+
+        client.setClient(dto.getClient());
+        client.setProduct(dto.getProduct());
+        client.setSize(dto.getSize());
+        client.setPly(dto.getPly());
+        client.setTopGsm(dto.getTopGsm());
+        client.setLinerGsm(dto.getLinerGsm());
+        client.setBottomGsm(dto.getLinerGsm());
+        client.setFluteGsm(dto.getFluteGsm());
+        client.setMadeUpOf(dto.getMadeUpOf());
+        client.setPaperTypeTop(dto.getPaperTypeTop());
+        client.setPaperTypeBottom(dto.getPaperTypeBottom());
+        client.setPaperTypeFlute(dto.getPaperTypeFlute());
+        client.setDescription(dto.getDescription());
+        client.setProductionCostPerBox(dto.getProductionCostPerBox());
+        client.setSellingPricePerBox(dto.getSellingPricePerBox());
+
+        client.setPaperTypeTopNorm(dto.getPaperTypeTop().toLowerCase().replaceAll("[^a-z0-9]", ""));
+        client.setPaperTypeBottomNorm(dto.getPaperTypeBottom().toLowerCase().replaceAll("[^a-z0-9]", ""));
+        client.setPaperTypeFluteNorm(dto.getPaperTypeFlute().toLowerCase().replaceAll("[^a-z0-9]", ""));
+        client.setClientNormalizer(dto.getClient().toLowerCase().replaceAll("[^a-z0-9]", ""));
+        client.setProductNormalizer(dto.getProduct().toLowerCase().replaceAll("[^a-z0-9]", ""));
+
+        clientRepository.save(client);
+        return ResponseEntity.ok("Corrugated client updated successfully.");
+    }
+
+
+    @PutMapping("/client/punching/order/update/{id}")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ResponseEntity<String> editPunchingClient(@PathVariable Long id, @RequestBody PunchingClientDTO dto) {
+        Optional<Clients> optionalClient = clientRepository.findById(id);
+        if (optionalClient.isEmpty()) return ResponseEntity.notFound().build();
+
+        Clients client = optionalClient.get();
+
+        client.setClient(dto.getClient());
+        client.setProduct(dto.getProduct());
+        client.setSize(dto.getSize());
+        client.setPly(dto.getPly());
+        client.setTopGsm(dto.getTopGsm());
+        client.setLinerGsm(dto.getLinerGsm());
+        client.setBottomGsm(dto.getLinerGsm());
+        client.setFluteGsm(dto.getFluteGsm());
+        client.setMadeUpOf(dto.getMadeUpOf());
+        client.setPaperTypeTop(dto.getPaperTypeTop());
+        client.setPaperTypeBottom(dto.getPaperTypeBottom());
+        client.setPaperTypeFlute(dto.getPaperTypeFlute());
+        client.setDescription(dto.getDescription());
+        client.setProductionCostPerBox(dto.getProductionCostPerBox());
+        client.setSellingPricePerBox(dto.getSellingPricePerBox());
+
+        client.setPaperTypeTopNorm(dto.getPaperTypeTop().toLowerCase().replaceAll("[^a-z0-9]", ""));
+        client.setPaperTypeBottomNorm(dto.getPaperTypeBottom().toLowerCase().replaceAll("[^a-z0-9]", ""));
+        client.setPaperTypeFluteNorm(dto.getPaperTypeFlute().toLowerCase().replaceAll("[^a-z0-9]", ""));
+        client.setClientNormalizer(dto.getClient().toLowerCase().replaceAll("[^a-z0-9]", ""));
+        client.setProductNormalizer(dto.getProduct().toLowerCase().replaceAll("[^a-z0-9]", ""));
+
+        client.setDeckle(dto.getDeckle());
+        client.setCuttingLength(dto.getCuttingLength());
+
+        clientRepository.save(client);
+        return ResponseEntity.ok("Punching client updated successfully.");
+    }
+
+
 
 
     @PostMapping("/client/order/create")
@@ -65,11 +411,13 @@ public class ClientController {
             client.setTwoUps(clients.getDeckle() * 2);
             client.setThreeUps(clients.getDeckle() * 3);
             client.setFourUps(clients.getDeckle() * 4);
+            client.setFiveUps(clients.getDeckle()*5);
+            client.setSixUps(clients.getDeckle()*6);
         } else {
             // For corrugated: calculate values
             int l = arr[0];
             int w = arr[1];
-            int h = arr.length > 2 ? arr[2] : 0; // safely fallback
+            int h = arr.length > 2 ? arr[2] : 0;
 
             String plyStr = clients.getPly();
             int plyNo = 0;
@@ -91,8 +439,9 @@ public class ClientController {
             client.setTwoUps(finalDeckle * 2);
             client.setThreeUps(finalDeckle * 3);
             client.setFourUps(finalDeckle * 4);
+            client.setFiveUps(finalDeckle*5);
+            client.setSixUps(finalDeckle*6);
 
-            // Use the calculated deckle here
             double cuttingLength;
             if (finalDeckle > 65.0) {
                 cuttingLength = (l + w + 50) / 10.0;
@@ -148,6 +497,7 @@ public class ClientController {
 
         return ResponseEntity.ok(client);
     }
+
 
     @PutMapping("/updateClientAndReel/{id}")
     public ResponseEntity<String> updateClientAndReel(
@@ -207,5 +557,4 @@ public class ClientController {
                     .body("Error updating records: " + e.getMessage());
         }
     }
-
 }

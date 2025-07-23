@@ -18,15 +18,27 @@ public class SuggestedReel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private String client, clientNormalizer, product, size, ply;
+
+    private String client, clientNormalizer, productNormalizer ,product, size, ply;
     private double deckle, cuttingLength;
-    private int topGsm, linerGsm, fluteGsm,bottomGsm;
-    private String madeUpOf, paperTypeTop, paperTypeBottom , paperTypeFlute;
+    private int topGsm, bottomGsm, linerGsm, fluteGsm;
+    private String madeUpOf, paperTypeTop, paperTypeBottom;
     private double oneUps, twoUps, threeUps, fourUps;
     private String description;
     private double sellingPricePerBox;
     private double productionCostPerBox;
+    private String paperTypeFlute;
 
+
+    private String paperTypeTopNorm;
+    private String paperTypeBottomNorm;
+    private String paperTypeFluteNorm;
+
+
+    private double fiveUps;
+    private double sixUps;
+    private double cuttingLengthOneUps;
+    private double cuttingLengthTwoUps;
     @AssertTrue(message = "Flute GSM must be provided when different from liner")
     public boolean isFluteValid() {
         return (linerGsm == fluteGsm) || fluteGsm > 0;
