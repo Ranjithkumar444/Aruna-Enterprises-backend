@@ -265,6 +265,7 @@ public class ClientController {
         reel.setClient(clients.getClient());
         reel.setClientNormalizer(clients.getClientNormalizer());
         reel.setProduct(clients.getProduct());
+        reel.setProductNormalizer(clients.getProductNormalizer());
         reel.setSize(clients.getSize());
         reel.setPly(clients.getPly());
         reel.setDeckle(clients.getDeckle());
