@@ -177,9 +177,12 @@ public class ClientController {
     public ResponseEntity<String> createPunchingClient(@RequestBody PunchingClientDTO punchingClientDTO) {
         Clients client = new Clients();
 
+        String normalizedProduct = punchingClientDTO.getProduct().toLowerCase().replaceAll("[^a-z0-9]", "");
+
         // Set base fields from DTO
         client.setClient(punchingClientDTO.getClient());
         client.setProduct(punchingClientDTO.getProduct());
+        client.setProductNormalizer(normalizedProduct);
         client.setSize(punchingClientDTO.getSize());
         client.setPly(punchingClientDTO.getPly());
         client.setTopGsm(punchingClientDTO.getTopGsm());
