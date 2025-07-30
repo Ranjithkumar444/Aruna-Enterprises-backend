@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
-
 @RestController
 @RequestMapping("/admin")
 public class ClientController {
@@ -36,10 +35,10 @@ public class ClientController {
     public ResponseEntity<String> CourgatedClientCreate(@RequestBody CourgatedClientDTO courgatedClientDTO){
         Clients client = new Clients();
 
-        Machine machine = machineRepository.findByMachineName("Courgation");
+        Machine machine = machineRepository.findByMachineName(courgatedClientDTO.getFluteType());
 
         if(machine == null){
-            machine = machineRepository.findByMachineName("courgation");
+            machine = machineRepository.findByMachineName(courgatedClientDTO.getFluteType());
         }
 
         client.setClient(courgatedClientDTO.getClient());
@@ -51,6 +50,7 @@ public class ClientController {
         client.setFluteGsm(courgatedClientDTO.getFluteGsm());
         client.setLinerGsm(courgatedClientDTO.getLinerGsm());
         client.setMadeUpOf(courgatedClientDTO.getMadeUpOf());
+        client.setFluteType(courgatedClientDTO.getFluteType());
         client.setPaperTypeBottom(courgatedClientDTO.getPaperTypeBottom());
         client.setPaperTypeTop(courgatedClientDTO.getPaperTypeTop());
         client.setPly(courgatedClientDTO.getPly());
@@ -104,10 +104,21 @@ public class ClientController {
         client.setDeckle(finalDeckle);
         client.setOneUps(finalDeckle);
         client.setTwoUps(finalDeckle * 2);
-        client.setThreeUps(finalDeckle * 3);
-        client.setFourUps(finalDeckle * 4);
-        client.setFiveUps(finalDeckle*5);
-        client.setSixUps(finalDeckle*6);
+
+        double temp;
+
+        if(plyNo == 3 || plyNo == 5){
+            temp = Math.floor((w + h + 10)/10.0);
+            client.setThreeUps(temp * 3);
+            client.setFourUps(temp * 4);
+            client.setFiveUps(temp*5);
+            client.setSixUps(temp*6);
+        }else {
+            client.setThreeUps(finalDeckle * 3);
+            client.setFourUps(finalDeckle * 4);
+            client.setFiveUps(finalDeckle*5);
+            client.setSixUps(finalDeckle*6);
+        }
 
         double cuttingLength;
         double baseCuttingLength = (2  * ( l +  w ) + 50 ) / 10.0;
@@ -151,6 +162,7 @@ public class ClientController {
         reel.setPaperTypeBottom(clients.getPaperTypeBottom());
         reel.setOneUps(clients.getOneUps());
         reel.setTwoUps(clients.getTwoUps());
+        reel.setFluteType(clients.getFluteType());
         reel.setThreeUps(clients.getThreeUps());
         reel.setPaperTypeFlute(clients.getPaperTypeFlute());
         reel.setFourUps(clients.getFourUps());
@@ -177,18 +189,18 @@ public class ClientController {
     public ResponseEntity<String> createPunchingClient(@RequestBody PunchingClientDTO punchingClientDTO) {
         Clients client = new Clients();
 
-        String normalizedProduct = punchingClientDTO.getProduct().toLowerCase().replaceAll("[^a-z0-9]", "");
-
         // Set base fields from DTO
+        String normalizedProduct = punchingClientDTO.getProduct().toLowerCase().replaceAll("[^a-z0-9]", "");
+        client.setProductNormalizer(normalizedProduct);
         client.setClient(punchingClientDTO.getClient());
         client.setProduct(punchingClientDTO.getProduct());
-        client.setProductNormalizer(normalizedProduct);
         client.setSize(punchingClientDTO.getSize());
         client.setPly(punchingClientDTO.getPly());
         client.setTopGsm(punchingClientDTO.getTopGsm());
         client.setLinerGsm(punchingClientDTO.getLinerGsm());
         client.setBottomGsm(punchingClientDTO.getLinerGsm());
         client.setFluteGsm(punchingClientDTO.getFluteGsm());
+        client.setFluteType(punchingClientDTO.getFluteType());
         client.setMadeUpOf(punchingClientDTO.getMadeUpOf());
         client.setPaperTypeTop(punchingClientDTO.getPaperTypeTop());
         client.setPaperTypeBottom(punchingClientDTO.getPaperTypeBottom());
@@ -239,12 +251,11 @@ public class ClientController {
         client.setCuttingLength(cuttingLength);
 
         if(finalDeckle > 65) {
-            client.setPiece("2 Ups Deckle");
-        }else{
             client.setPiece("1 Ups Deckle");
+        }else{
+            client.setPiece("2 Ups Deckle");
         }
 
-        // Set UPS values
         client.setOneUps(finalDeckle);
         client.setTwoUps(finalDeckle * 2);
         client.setThreeUps(finalDeckle * 3);
@@ -264,8 +275,8 @@ public class ClientController {
         SuggestedReel reel = new SuggestedReel();
         reel.setClient(clients.getClient());
         reel.setClientNormalizer(clients.getClientNormalizer());
-        reel.setProduct(clients.getProduct());
         reel.setProductNormalizer(clients.getProductNormalizer());
+        reel.setProduct(clients.getProduct());
         reel.setSize(clients.getSize());
         reel.setPly(clients.getPly());
         reel.setDeckle(clients.getDeckle());
@@ -280,6 +291,7 @@ public class ClientController {
         reel.setOneUps(clients.getOneUps());
         reel.setTwoUps(clients.getTwoUps());
         reel.setThreeUps(clients.getThreeUps());
+        reel.setFluteType(clients.getFluteType());
         reel.setPaperTypeFlute(clients.getPaperTypeFlute());
         reel.setFourUps(clients.getFourUps());
         reel.setFiveUps(clients.getFiveUps());

@@ -26,4 +26,6 @@ public class PunchingClientDTO {
     private double sellingPricePerBox;
 
     private double productionCostPerBox;
+
+    private String fluteType;
 }

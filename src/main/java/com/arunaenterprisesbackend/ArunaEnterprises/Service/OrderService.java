@@ -296,6 +296,7 @@ public class OrderService {
     @Autowired private OrderSuggestedReelsRepository orderSuggestedReelsRepository;
     @Autowired private ProductionDetailRepository productionDetailRepository;
     @Autowired private ClientRepository clientRepository;
+    @Autowired private MachineRepository machineRepository;
 
     @Transactional
     public SuggestedReelsResponseDTO createOrder(OrderDTO dto) {
@@ -304,6 +305,8 @@ public class OrderService {
         Optional<SuggestedReel> sropt =  suggestedReelRepository
                 .findByClientNormalizerAndSizeAndProductNormalizer(order.getNormalizedClient(), order.getSize(), order.getProductName().toLowerCase().replaceAll("[^a-z0-9]", ""));
 
+
+
         SuggestedReel sr = sropt.orElseThrow(() ->
                 new RuntimeException("No suggested reel configuration found for this order"));
 
@@ -311,16 +314,7 @@ public class OrderService {
             return createEmptyResponse("Order created — no suggested reels found");
         }
 
-        String topPaperType = sr.getPaperTypeTop();
-        String linerPaperType = sr.getPaperTypeBottom();
-        String flutePaperType = sr.getPaperTypeFlute();
-
-        String topPaperTypeNorm = sr.getPaperTypeTop().toLowerCase().replaceAll("\\s+", "");
-        String linerPaperTypeNorm = sr.getPaperTypeBottom().toLowerCase().replaceAll("\\s+", "");
-        String flutePaperTypeNorm = sr.getPaperTypeFlute().toLowerCase().replaceAll("\\s+", "");
-
-
-        // If oneUps is small (say < 65), try all 2ups, 3ups, 4ups
+        Machine machine = machineRepository.findByMachineName(sr.getFluteType());
         List<Double> candidateDeckles = new ArrayList<>();
         candidateDeckles.add(sr.getTwoUps());
         candidateDeckles.add(sr.getThreeUps());
@@ -353,14 +347,14 @@ public class OrderService {
 
             for (Double rawDeckle : candidateDeckles) {
                 int deckle = (int) Math.floor(rawDeckle);
-                List<SuggestedReelItem> found = findTopReels(targetGsm, deckle, paperTypeNorm);
+                List<SuggestedReelItem> found = findTopReels(targetGsm, deckle, paperTypeNorm,dto.getUnit());
                 bestItems.addAll(found);
             }
 
             // Deduplicate and limit
             bestItems = bestItems.stream()
                     .distinct()
-                    .limit(50)
+                    .limit(10)
                     .toList();
 
             switch (layer) {
@@ -419,6 +413,15 @@ public class OrderService {
         prddetail.setThreeUpsDeckle(decklesRoundedDown*3);
         prddetail.setFourUpsDeckle(decklesRoundedDown*4);
 
+        prddetail.setOnePieceCuttingLength(sr.getCuttingLengthOneUps());
+        prddetail.setTwoPieceCuttingLength(sr.getCuttingLengthTwoUps());
+
+        prddetail.setOnePiecePlain(dto.getQuantity());
+        prddetail.setOnePieceSheet(dto.getQuantity());
+
+        prddetail.setTwoUpsPlain(dto.getQuantity()/2);
+        prddetail.setTwoUpsSheets(dto.getQuantity()/2);
+
         prddetail.setTwoUpsPlain(dto.getQuantity()/2);
         prddetail.setThreeUpsPlain(dto.getQuantity()/3);
         prddetail.setFourUpsPlain(dto.getQuantity()/4);
@@ -433,13 +436,23 @@ public class OrderService {
         order.setProductionDetail(prddetail);
         orderRepository.save(order);
 
+        int minDeck = (int) machine.getMinDeckle();
+        int maxDeck = (int)machine.getMaxDeckle();
+        int minCut  = (int) machine.getMinCuttingLength();
+        int maxCut  = (int) machine.getMaxCuttingLength();
+
         return new SuggestedReelsResponseDTO(
                 mapDTO(osr.getTopReels(), sr),
                 mapDTO(osr.getBottomReels(), sr),
                 mapDTO(osr.getFluteReels(), sr),
                 needsFlute,
                 "Order created with suggested reels",
-                order.getId()
+                order.getId(),
+                minDeck,
+                maxDeck,
+                minCut,
+                maxCut
+
         );
     }
 
@@ -569,12 +582,12 @@ public class OrderService {
 //                .collect(Collectors.toList());
 //    }
 
-    private List<SuggestedReelItem> findTopReels(int gsm, int deckle, String paperTypeNorm) {
+    private List<SuggestedReelItem> findTopReels(int gsm, int deckle, String paperTypeNorm, String unit) {
         if (paperTypeNorm == null || paperTypeNorm.isBlank()) {
             return Collections.emptyList();
         }
 
-        double minDeckle = deckle;
+        double minDeckle = deckle - 1.0;
         double maxDeckle = deckle + 3.0;
 
         // First find by exact paper type match
@@ -583,6 +596,14 @@ public class OrderService {
                 paperTypeNorm,
                 List.of(ReelStatus.NOT_IN_USE, ReelStatus.PARTIALLY_USED_AVAILABLE)
         );
+
+        // Normalize the input unit to lower case for case-insensitive comparison
+        String normalizedInputUnit = (unit != null) ? unit.trim().toLowerCase() : "";
+
+        // Filter by unit (case-insensitive)
+        candidates = candidates.stream()
+                .filter(r -> r.getUnit() != null && r.getUnit().trim().equalsIgnoreCase(normalizedInputUnit))
+                .collect(Collectors.toList());
 
         // Then filter by GSM
         List<Reel> exactMatch = candidates.stream()
@@ -594,8 +615,9 @@ public class OrderService {
         if (exactMatch.isEmpty()) {
             exactMatch = candidates.stream()
                     .filter(r -> Math.abs(r.getGsm() - gsm) <= 20) // ±20 GSM tolerance
-                    .sorted(Comparator.comparingInt(r -> Math.abs(r.getGsm() - gsm)))
-                    .sorted(Comparator.comparingDouble(r -> Math.abs(r.getDeckle() - deckle)))
+                    .sorted(Comparator
+                            .comparingInt((Reel r) -> Math.abs(r.getGsm() - gsm))
+                            .thenComparingDouble(r -> Math.abs(r.getDeckle() - deckle)))
                     .collect(Collectors.toList());
         }
 

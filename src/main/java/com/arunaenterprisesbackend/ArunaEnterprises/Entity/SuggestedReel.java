@@ -43,4 +43,6 @@ public class SuggestedReel {
     public boolean isFluteValid() {
         return (linerGsm == fluteGsm) || fluteGsm > 0;
     }
+
+    private String fluteType;
 }

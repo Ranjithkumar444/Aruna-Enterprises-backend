@@ -56,4 +56,13 @@ public class ProductionDetail {
     private double totalTopWeightReq;
     private double totalLinerWeightReq;
     private double totalFluteWeightReq;
+
+    private double onePieceCuttingLength;
+    private double twoPieceCuttingLength;
+
+    private double onePiecePlain;
+    private double twoPiecePlain;
+
+    private double onePieceSheet;
+    private double twoPieceSheet;
 }

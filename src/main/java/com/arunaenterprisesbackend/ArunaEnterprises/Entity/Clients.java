@@ -61,4 +61,6 @@ public class Clients {
     private double cuttingLengthTwoUps;
 
     private String piece;
+
+    private String fluteType;
 }
