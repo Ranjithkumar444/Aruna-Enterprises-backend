@@ -284,7 +284,6 @@ import java.util.stream.Collectors;
 //}
 
 
-
 @Service
 public class OrderService {
 
@@ -325,6 +324,16 @@ public class OrderService {
         OrderSuggestedReels osr = new OrderSuggestedReels();
         osr.setOrder(order);
         osr.setUsedDeckle(Collections.max(candidateDeckles));
+
+        MachineCapacityDTO machineCapacityDTO = new MachineCapacityDTO();
+
+        machineCapacityDTO.setMachineName(machine.getMachineName());
+        machineCapacityDTO.setMaxDeckle(machine.getMaxDeckle());
+        machineCapacityDTO.setMinDeckle(machine.getMinDeckle());
+        machineCapacityDTO.setMaxCuttingLength(machine.getMaxCuttingLength());
+        machineCapacityDTO.setMinCuttingLength(machine.getMinCuttingLength());
+        machineCapacityDTO.setNoOfBoxPerHour(machine.getNoOfBoxPerHour());
+        machineCapacityDTO.setNoOfSheetsPerHour(machine.getNoOfSheetsPerHour());
 
         boolean needsFlute = sr.getFluteGsm() != sr.getLinerGsm();
 
@@ -408,7 +417,71 @@ public class OrderService {
         prddetail.setTopGsm(sr.getTopGsm());
         prddetail.setLinerGsm(sr.getLinerGsm());
         prddetail.setPlain(dto.getQuantity());
-        prddetail.setSheets(dto.getQuantity());
+
+        String ply = sr.getPly();
+        String numberOnly = ply.replaceAll("[^0-9]", "");
+
+        int plyNumber = numberOnly.isEmpty() ? 0 : Integer.parseInt(numberOnly);
+
+        int sheets = 0;
+
+        int cutSheets = 0;
+
+        if(plyNumber == 3){
+
+            prddetail.setSheets(dto.getQuantity());
+            prddetail.setOnePieceSheet(dto.getQuantity());
+            prddetail.setTwoUpsSheets(dto.getQuantity()/2);
+            prddetail.setThreeUpsSheets(dto.getQuantity()/3);
+            prddetail.setFourUpsSheets(dto.getQuantity()/4);
+
+            prddetail.setOnePiecePlain(dto.getQuantity());
+            prddetail.setOnePieceSheet(dto.getQuantity());
+
+            prddetail.setTwoPiecePlain(dto.getQuantity());
+            prddetail.setTwoPieceSheet(dto.getQuantity());
+
+        }else if(plyNumber == 5){
+            sheets = dto.getQuantity()*2;
+            prddetail.setSheets(sheets);
+            prddetail.setOnePieceSheet(sheets);
+            prddetail.setTwoUpsSheets(sheets/2);
+            prddetail.setThreeUpsSheets(sheets/3);
+            prddetail.setFourUpsSheets(sheets/4);
+
+            prddetail.setOnePiecePlain(dto.getQuantity());
+            prddetail.setOnePieceSheet(dto.getQuantity()*2);
+
+            prddetail.setTwoPiecePlain(dto.getQuantity()*2);
+            prddetail.setTwoPieceSheet(dto.getQuantity()*4);
+        }else if(plyNumber == 7){
+            sheets = dto.getQuantity()*3;
+            prddetail.setSheets(sheets);
+            prddetail.setOnePieceSheet(sheets);
+            prddetail.setTwoUpsSheets(sheets/2);
+            prddetail.setThreeUpsSheets(sheets/3);
+            prddetail.setFourUpsSheets(sheets/4);
+
+            prddetail.setOnePiecePlain(dto.getQuantity());
+            prddetail.setOnePieceSheet(dto.getQuantity()*2);
+
+            prddetail.setTwoPiecePlain(dto.getQuantity()*2);
+            prddetail.setTwoPieceSheet(dto.getQuantity()*3);
+        }else{
+            sheets = dto.getQuantity()*4;
+            prddetail.setSheets(sheets);
+            prddetail.setOnePieceSheet(sheets);
+            prddetail.setTwoUpsSheets(sheets/2);
+            prddetail.setThreeUpsSheets(sheets/3);
+            prddetail.setFourUpsSheets(sheets/4);
+
+            prddetail.setOnePiecePlain(dto.getQuantity());
+            prddetail.setOnePieceSheet(dto.getQuantity()*2);
+
+            prddetail.setTwoPiecePlain(dto.getQuantity()*2);
+            prddetail.setTwoPieceSheet(dto.getQuantity()*4);
+        }
+
         prddetail.setTwoUpsDeckle(decklesRoundedDown*2);
         prddetail.setThreeUpsDeckle(decklesRoundedDown*3);
         prddetail.setFourUpsDeckle(decklesRoundedDown*4);
@@ -416,19 +489,16 @@ public class OrderService {
         prddetail.setOnePieceCuttingLength(sr.getCuttingLengthOneUps());
         prddetail.setTwoPieceCuttingLength(sr.getCuttingLengthTwoUps());
 
-        prddetail.setOnePiecePlain(dto.getQuantity());
-        prddetail.setOnePieceSheet(dto.getQuantity());
-
         prddetail.setTwoUpsPlain(dto.getQuantity()/2);
-        prddetail.setTwoUpsSheets(dto.getQuantity()/2);
-
         prddetail.setTwoUpsPlain(dto.getQuantity()/2);
         prddetail.setThreeUpsPlain(dto.getQuantity()/3);
         prddetail.setFourUpsPlain(dto.getQuantity()/4);
 
-        prddetail.setTwoUpsSheets(dto.getQuantity()/2);
-        prddetail.setThreeUpsSheets(dto.getQuantity()/3);
-        prddetail.setFourUpsSheets(dto.getQuantity()/4);
+        prddetail.setMachineName(machine.getMachineName());
+        prddetail.setMaxDeckle((int) machine.getMaxDeckle());
+        prddetail.setMinDeckle((int) machine.getMinDeckle());
+        prddetail.setMaxCuttingLength(String.valueOf(machine.getMaxCuttingLength()));
+        prddetail.setMinCuttingLength(String.valueOf(machine.getMinCuttingLength()));
 
         prddetail.setDeckle(sr.getDeckle());
 
@@ -448,10 +518,7 @@ public class OrderService {
                 needsFlute,
                 "Order created with suggested reels",
                 order.getId(),
-                minDeck,
-                maxDeck,
-                minCut,
-                maxCut
+                machineCapacityDTO
 
         );
     }

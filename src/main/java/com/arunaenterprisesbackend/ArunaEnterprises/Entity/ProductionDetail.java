@@ -65,4 +65,11 @@ public class ProductionDetail {
 
     private double onePieceSheet;
     private double twoPieceSheet;
+
+
+    private int maxDeckle;
+    private String machineName;
+    private int minDeckle;
+    private String maxCuttingLength;
+    private String minCuttingLength;
 }

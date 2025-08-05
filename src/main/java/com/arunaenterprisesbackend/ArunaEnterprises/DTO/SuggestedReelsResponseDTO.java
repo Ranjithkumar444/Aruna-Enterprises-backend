@@ -15,8 +15,5 @@ public class SuggestedReelsResponseDTO {
     private boolean fluteRequired;
     private String message;
     private long orderid;
-    private int minDeckle;
-    private int maxDeckle;
-    private int minCuttingLength;
-    private int maxCuttingLength;
+    private MachineCapacityDTO machineCapacityDTO;
 }
