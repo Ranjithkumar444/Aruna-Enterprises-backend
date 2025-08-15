@@ -104,7 +104,6 @@ public class ReelController {
         return ResponseEntity.notFound().build();
     }
 
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN')")
     @GetMapping("barcode/details/{barcodeId}")
     public ResponseEntity<ReelDetailsDTO> getReelDetails(@PathVariable String barcodeId) {
         Optional<Reel> optionalReel = Optional.ofNullable(reelRepository.findByBarcodeId(barcodeId));
@@ -156,7 +155,6 @@ public class ReelController {
         return ResponseEntity.ok(reels);
     }
 
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN')")
     @GetMapping("/reel/details/{id}")
     public ResponseEntity<ReelResponseDTO> getReelFullDetails(@PathVariable String id) {
         Reel reel;
@@ -187,7 +185,6 @@ public class ReelController {
         return ResponseEntity.ok(dto);
     }
 
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN')")
     @GetMapping("/reel/orderReelUsage/{code}")
     public ResponseEntity<?> getAllOrderReelUsageByCode(@PathVariable String code) {
         try {
