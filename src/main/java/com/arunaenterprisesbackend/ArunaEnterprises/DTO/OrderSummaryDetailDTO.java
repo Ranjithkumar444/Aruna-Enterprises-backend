@@ -17,7 +17,7 @@ public class OrderSummaryDetailDTO {
     private double fluteWeightConsumed;
     private double totalWeightConsumed;
     private List<ReelUsageSummaryDTO> reelUsages;
-
+    private String unit;
     private double profit;
     private String profitPercentage;
     private double revenue;

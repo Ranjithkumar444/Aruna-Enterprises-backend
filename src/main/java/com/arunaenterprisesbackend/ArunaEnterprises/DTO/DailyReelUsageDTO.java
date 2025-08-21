@@ -26,6 +26,7 @@ public class DailyReelUsageDTO {
     private int deckle;
     private int gsm;
     private int bf;
+    private String unit;
 
     private String reelBarcodeId; // From Reel
     private int reelNo; // From Reel
