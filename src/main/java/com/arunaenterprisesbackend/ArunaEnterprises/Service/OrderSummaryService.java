@@ -217,7 +217,6 @@ public class OrderSummaryService {
         dto.setTotalOrdersShipped(summary.getTotalOrdersShipped());
         dto.setTotalWeightConsumed(summary.getTotalWeightConsumed());
         dto.setCreatedAt(summary.getCreatedAt());
-
         // Map new fields
         dto.setTotalProfitOfDay(summary.getTotalProfitOfDay());
         dto.setTotalRevenueOfDay(summary.getTotalRevenueOfDay());
@@ -239,6 +238,7 @@ public class OrderSummaryService {
         dto.setOrderId(detail.getOrder().getId());
         dto.setClient(detail.getOrder().getClient());
         dto.setProductType(detail.getOrder().getProductType());
+        dto.setUnit(detail.getOrder().getUnit());
         dto.setQuantity(detail.getOrder().getQuantity());
         dto.setSize(detail.getOrder().getSize());
         dto.setTopWeightConsumed(detail.getTopWeightConsumed());

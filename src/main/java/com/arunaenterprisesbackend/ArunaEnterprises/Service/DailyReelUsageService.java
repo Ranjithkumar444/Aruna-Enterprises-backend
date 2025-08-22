@@ -56,6 +56,7 @@ public class DailyReelUsageService {
             dto.setOrderCreatedDate(oru.getOrder().getOrderCreatedDate());
             dto.setTypeOfProduct(oru.getOrder().getTypeOfProduct());
             dto.setProductName(oru.getOrder().getProductName());
+            dto.setUnit(oru.getOrder().getUnit());
         }
 
         // Populate from Reel entity

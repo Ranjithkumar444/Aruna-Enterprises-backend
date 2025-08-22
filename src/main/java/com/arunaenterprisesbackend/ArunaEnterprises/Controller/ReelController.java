@@ -85,7 +85,8 @@ public class ReelController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(null);
+                    .header("X-Error-Message", e.getMessage() != null ? e.getMessage() : "Internal error")
+                    .body(new ReelRegistrationResponseDTO(null));
         }
     }
 
