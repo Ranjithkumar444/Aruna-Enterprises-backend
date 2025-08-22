@@ -64,10 +64,13 @@ public class OrderController {
     }
 
 
-    @PostMapping("/order/split")
-    public ResponseEntity<String> splitOrder(@RequestBody OrderSplitDTO dto) {
+    @PostMapping("/order/{orderId}/split")
+    public ResponseEntity<String> splitOrder(
+            @PathVariable Long orderId,
+            @RequestBody OrderSplitDTO dto) {
         try {
-            orderservice.splitOrder(dto);
+            // Pass the path variable ID to the service method
+            orderservice.splitOrder(orderId, dto.getFirstOrderQuantity(), dto.getSecondOrderQuantity());
             return ResponseEntity.ok("Order split successfully.");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

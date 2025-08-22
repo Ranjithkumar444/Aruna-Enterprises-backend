@@ -777,30 +777,38 @@ public class OrderService {
     }
 
     @Transactional
-    public void splitOrder(OrderSplitDTO dto) {
-        Order original = orderRepository.findById(dto.getOriginalOrderId())
+    public void splitOrder(Long originalOrderId, int firstPartQuantity, int secondPartQuantity) {
+        Order original = orderRepository.findById(originalOrderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
-        int total = dto.getFirstOrderQuantity() + dto.getSecondOrderQuantity();
-        if (total != original.getQuantity()) {
-            throw new RuntimeException("Split quantities do not match original quantity.");
+        if (firstPartQuantity <= 0 || secondPartQuantity <= 0 || (firstPartQuantity + secondPartQuantity) != original.getQuantity()) {
+            throw new RuntimeException("Split quantities are invalid.");
         }
 
         // Update original order with first part
-        original.setQuantity(dto.getFirstOrderQuantity());
+        original.setQuantity(firstPartQuantity);
         orderRepository.save(original);
 
-        // Create second duplicate order
+        // Create a new order by copying data
         Order newOrder = new Order();
-        BeanUtils.copyProperties(original, newOrder, "id", "createdAt", "updatedAt", "completedAt", "shippedAt");
-        newOrder.setQuantity(dto.getSecondOrderQuantity());
+        BeanUtils.copyProperties(original, newOrder,
+                "id", "createdAt", "updatedAt", "completedAt", "shippedAt", "transportNumber", "productionDetail");
+
+        // Reset unique/sensitive fields and timestamps for the new order
+        newOrder.setQuantity(secondPartQuantity);
         newOrder.setCreatedAt(ZonedDateTime.now(ZoneId.of("Asia/Kolkata")));
         newOrder.setUpdatedAt(ZonedDateTime.now(ZoneId.of("Asia/Kolkata")));
         newOrder.setTransportNumber(null);
         newOrder.setCompletedAt(null);
         newOrder.setShippedAt(null);
-        newOrder.setStatus(original.getStatus());
-        newOrder.setNormalizedClient(original.getNormalizedClient());
+
+        // Explicitly handle related ProductionDetail object
+        if (original.getProductionDetail() != null) {
+            ProductionDetail newProductionDetail = new ProductionDetail();
+            BeanUtils.copyProperties(original.getProductionDetail(), newProductionDetail, "id", "order");
+            newOrder.setProductionDetail(newProductionDetail);
+            newProductionDetail.setOrder(newOrder); // Link back to the new order
+        }
 
         orderRepository.save(newOrder);
     }
