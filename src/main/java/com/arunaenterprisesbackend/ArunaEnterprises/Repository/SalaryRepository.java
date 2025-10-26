@@ -1,5 +1,6 @@
 package com.arunaenterprisesbackend.ArunaEnterprises.Repository;
 
+import com.arunaenterprisesbackend.ArunaEnterprises.DTO.SalaryMetricsDTO;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Employee;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Salary;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -9,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
+
 
 public interface SalaryRepository extends JpaRepository<Salary, Long> {
     List<Salary> findByEmployeeId(Long employeeId);
@@ -49,4 +51,48 @@ public interface SalaryRepository extends JpaRepository<Salary, Long> {
     void deleteAllByEmployees(@Param("employees") List<Employee> employees);
 
     Optional<Salary> findByEmployeeIdAndMonthAndYear(long id, int monthValue, int year);
+
+    @Query("SELECT e.unit AS unit, SUM(s.totalSalaryThisMonth) AS totalSalary " +
+            "FROM Salary s JOIN s.employee e " +
+            "GROUP BY e.unit")
+    List<Object[]> getTotalSalaryByUnit();
+
+    @Query("SELECT e.name AS employeeName, e.unit AS unit, SUM(s.totalSalaryThisMonth) AS totalSalary " +
+            "FROM Salary s JOIN s.employee e " +
+            "GROUP BY e.id, e.name, e.unit " +
+            "ORDER BY e.unit, e.name")
+    List<Object[]> getTotalSalaryByEmployee();
+
+    @Query("SELECT new com.arunaenterprisesbackend.ArunaEnterprises.DTO.SalaryMetricsDTO(e.unit, e.name, SUM(s.totalSalaryThisMonth)) " +
+            "FROM Salary s JOIN s.employee e " +
+            "GROUP BY e.unit, e.name " +
+            "ORDER BY e.unit, e.name")
+    List<SalaryMetricsDTO> getSalaryMetrics();
+
+
+    @Query("SELECT new com.arunaenterprisesbackend.ArunaEnterprises.DTO.SalaryMetricsDTO(e.unit, null, SUM(s.totalSalaryThisMonth)) " +
+            "FROM Salary s JOIN s.employee e GROUP BY e.unit")
+    List<SalaryMetricsDTO> getUnitWiseSalaryMetrics();
+
+
+    @Query("SELECT e.unit, SUM(s.totalSalaryThisMonth) " +
+            "FROM Salary s JOIN s.employee e " +
+            "WHERE s.month = :month AND s.year = :year " +
+            "GROUP BY e.unit")
+    List<Object[]> getTotalSalaryByUnitForMonthAndYear(@Param("month") int month, @Param("year") int year);
+
+
+    @Query("SELECT new com.arunaenterprisesbackend.ArunaEnterprises.DTO.SalaryMetricsDTO(e.unit, null, SUM(s.totalSalaryThisMonth)) " +
+            "FROM Salary s JOIN s.employee e " +
+            "WHERE s.month = :month AND s.year = :year " +
+            "GROUP BY e.unit")
+    List<SalaryMetricsDTO> getUnitWiseSalaryByMonthAndYear(@Param("month") int month, @Param("year") int year);
+
+    @Query("SELECT new com.arunaenterprisesbackend.ArunaEnterprises.DTO.SalaryMetricsDTO(e.unit, e.name, SUM(s.totalSalaryThisMonth)) " +
+            "FROM Salary s JOIN s.employee e " +
+            "WHERE s.month = :month AND s.year = :year " +
+            "GROUP BY e.unit, e.name")
+    List<SalaryMetricsDTO> getEmployeeWiseSalaryByMonthAndYear(@Param("month") int month, @Param("year") int year);
+
+
 }
