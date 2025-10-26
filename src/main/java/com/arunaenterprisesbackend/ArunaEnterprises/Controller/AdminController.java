@@ -76,7 +76,6 @@ public class AdminController {
             }
 
             String token = jwtService.generateToken(email);
-            // ✅ Include admin details in the response
             LoginResponse response = new LoginResponse(token, "Login successful", existingUser);
             return ResponseEntity.ok(response);
 

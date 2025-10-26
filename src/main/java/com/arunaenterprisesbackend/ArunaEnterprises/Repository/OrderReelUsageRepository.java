@@ -28,8 +28,7 @@ public interface OrderReelUsageRepository extends JpaRepository<OrderReelUsage,L
     List<OrderReelUsage> findByOrderIn(List<Order> orders);
 
     @Query("SELECT u FROM OrderReelUsage u " +
-            "WHERE u.order.status = 'SHIPPED' " +  // Changed to only SHIPPED
-            "AND u.courgationOut BETWEEN :start AND :end")
+            "WHERE u.courgationOut BETWEEN :start AND :end")
     List<OrderReelUsage> findUsagesInPeriod(
             @Param("start") ZonedDateTime start,
             @Param("end") ZonedDateTime end

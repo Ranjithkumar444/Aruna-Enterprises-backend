@@ -1,10 +1,13 @@
 package com.arunaenterprisesbackend.ArunaEnterprises.DTO;
 
-import lombok.Data;
+import lombok.*;
 
 @Data
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
 public class OrderSplitDTO {
-    private Long originalOrderId;
     private int firstOrderQuantity;
     private int secondOrderQuantity;
 }
