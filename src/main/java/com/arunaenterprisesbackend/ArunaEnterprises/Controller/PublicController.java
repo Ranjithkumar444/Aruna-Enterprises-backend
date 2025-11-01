@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -75,6 +76,29 @@ public class PublicController {
     public String HelloController(){
         return "Hello World";
     }
+    @PostMapping("/check-attendance")
+    public ResponseEntity<Boolean> checkAttendance(@RequestBody Barcode barcode) {
+        if (barcode == null || barcode.getBarcodeId() == null || barcode.getBarcodeId().isEmpty()) {
+            return ResponseEntity.badRequest().body(false);
+        }
+
+        String barcodeId = barcode.getBarcodeId();
+
+        Employee employee = employeeRepository.findByBarcodeId(barcodeId);
+        if (employee == null) {
+            return ResponseEntity.ok(false);
+        }
+
+        ZonedDateTime nowUtc = ZonedDateTime.now(ZoneId.of("UTC"));
+        LocalDate today = nowUtc.withZoneSameInstant(ZoneId.of("Asia/Kolkata")).toLocalDate();
+
+        Attendance attendance = attendanceRepository.findByEmployeeAndDate(employee, today);
+
+        boolean alreadyCheckedIn = (attendance != null && attendance.isCheckedIn());
+
+        return ResponseEntity.ok(alreadyCheckedIn);
+    }
+
 
     @PostMapping("/scan-attendance")
     public ResponseEntity<String> scanAttendance(@RequestBody Barcode barcodeId) {
