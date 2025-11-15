@@ -18,6 +18,7 @@ import java.time.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
+
 @Service
 public class SalaryService {
 
@@ -94,6 +95,7 @@ public class SalaryService {
         }
     }
 
+
     public List<SalaryResponseDTO> getCurrentMonthSalaryForAllEmployees() {
         YearMonth currentMonth = YearMonth.now(IST_ZONE);
         int month = currentMonth.getMonthValue();
@@ -127,12 +129,19 @@ public class SalaryService {
                 salary.setTotalOvertimeHours(0.0);
 
                 // Copy settings from last month
+                // Copy settings from last month
                 Salary latestSalary = salaryRepository.findTopByEmployeeOrderByYearDescMonthDesc(employee);
                 if (latestSalary != null) {
                     salary.setMonthlyBaseSalary(latestSalary.getMonthlyBaseSalary());
                     salary.setWorkingDays(latestSalary.getWorkingDays());
                     salary.setOtMultiplierFactor(latestSalary.getOtMultiplierFactor());
-                    calculateDerivedSalaryFields(salary);
+
+                    int workingDays = latestSalary.getWorkingDays();
+                    if (workingDays == 26 || workingDays == 30) {
+                        calculateDerivedSalaryFields(salary);
+                    } else {
+                        System.err.println("Skipped calculation for employee " + employee.getId() + " due to invalid working days: " + workingDays);
+                    }
                 }
 
                 // Pre-add Sunday salaries for 30-day workers
@@ -214,4 +223,34 @@ public class SalaryService {
 
         salaryRepository.save(salary);
     }
+
+
+
+//    @Transactional
+//    public void initializeMonthlySalariesIfNeeded(int month, int year) {
+//        List<Employee> activeEmployees = employeeRepository.findByIsActive(true);
+//
+//        for (Employee employee : activeEmployees) {
+//            if (salaryRepository.findByEmployeeAndMonthAndYear(employee, month, year) == null) {
+//                Salary salary = new Salary();
+//                salary.setEmployee(employee);
+//                salary.setMonth(month);
+//                salary.setYear(year);
+//                salary.setTotalSalaryThisMonth(0.0);
+//                salary.setTotalOvertimeHours(0.0);
+//
+//                // Copy settings from last month
+//                Salary latestSalary = salaryRepository.findTopByEmployeeOrderByYearDescMonthDesc(employee);
+//                if (latestSalary != null) {
+//                    salary.setMonthlyBaseSalary(latestSalary.getMonthlyBaseSalary());
+//                    salary.setWorkingDays(latestSalary.getWorkingDays());
+//                    salary.setOtMultiplierFactor(latestSalary.getOtMultiplierFactor());
+//                    calculateDerivedSalaryFields(salary);
+//                }
+//
+//                salaryRepository.save(salary);
+//            }
+//        }
+//    }
+
 }

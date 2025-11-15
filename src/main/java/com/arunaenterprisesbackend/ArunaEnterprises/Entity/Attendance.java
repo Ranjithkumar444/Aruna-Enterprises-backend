@@ -42,4 +42,6 @@ public class Attendance {
 
     private int month;
     private int year;
+    private boolean governmentHoliday;
 }
+
