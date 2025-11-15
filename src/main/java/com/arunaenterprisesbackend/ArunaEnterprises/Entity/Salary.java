@@ -17,7 +17,7 @@ public class Salary {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private double monthlyBaseSalary;
+    private double monthlyBaseSalary; //base salary
     private double otRatePerHour;
 
     private double totalSalaryThisMonth;
@@ -32,13 +32,13 @@ public class Salary {
     @JoinColumn(name = "employee_id", nullable = false)
     private Employee employee;
 
-    private int workingDays;
+    private int workingDays; //26 or 30 days working
 
-    private double regularHoursPerDay;
+    private double regularHoursPerDay; // 26 - 8hours and 30 days workers 12 hours
 
-    private double otMultiplierFactor;
+    private double otMultiplierFactor; // ot rate like 1X or 1.5X
 
-    private double otPerHour;
+    private double otPerHour; // ot salary per hours
 
     private double oneDaySalary;
 

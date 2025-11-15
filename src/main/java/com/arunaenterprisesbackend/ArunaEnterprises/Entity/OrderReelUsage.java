@@ -38,9 +38,9 @@ public class OrderReelUsage {
 
     private String recordedBy;
 
-    private String usageType;
+    private String usageType; // Flute or liner or top
 
     private int howManyBox;
 
-    private int previousWeight;
+    private int previousWeight; // previous weight of the reel
 }

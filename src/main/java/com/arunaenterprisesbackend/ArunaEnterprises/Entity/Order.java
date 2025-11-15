@@ -26,11 +26,11 @@ public class Order {
     @Column(nullable = false)
     private String client;
 
-    private String productType;
+    private String productType; //Ply 3-ply
 
-    private String typeOfProduct;
+    private String typeOfProduct; // Corrugated or punching
 
-    private String productName;
+    private String productName; // Own product name like
 
     private int quantity;
 

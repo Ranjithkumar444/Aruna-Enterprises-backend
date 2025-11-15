@@ -6,12 +6,14 @@ import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Employee;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Salary;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.AttendanceRepository;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.EmployeeRepository;
+import com.arunaenterprisesbackend.ArunaEnterprises.Repository.GovernmentHolidayRepository;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.SalaryRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.*;
+
 
 @Service
 public class AttendanceService {
@@ -31,6 +33,9 @@ public class AttendanceService {
     @Autowired
     private SalaryService salaryService;
 
+    @Autowired
+    private GovernmentHolidayRepository holidayRepo;
+
     @Transactional
     public String markAttendance(String barcodeId) {
         if (barcodeId == null || barcodeId.isEmpty()) {
@@ -42,10 +47,12 @@ public class AttendanceService {
             throw new IllegalArgumentException("No employee found with barcode ID: " + barcodeId);
         }
 
-        ZonedDateTime nowUtc = ZonedDateTime.now(UTC_ZONE); // ✅ use UTC
+        ZonedDateTime nowUtc = ZonedDateTime.now(UTC_ZONE);
         LocalDate today = nowUtc.withZoneSameInstant(IST_ZONE).toLocalDate();
 
         boolean isSunday = today.getDayOfWeek() == DayOfWeek.SUNDAY;
+        boolean isGovHoliday = holidayRepo.existsByHolidayDate(today);
+
         Attendance attendance = attendanceRepository.findByEmployeeAndDate(employee, today);
         Salary salary = salaryRepository.findByEmployeeAndMonthAndYear(
                 employee, today.getMonthValue(), today.getYear());
@@ -60,13 +67,12 @@ public class AttendanceService {
                 salary.setOtMultiplierFactor(previousSalary.getOtMultiplierFactor());
                 salary.setMonth(today.getMonthValue());
                 salary.setYear(today.getYear());
-
-                // Recalculate derived fields (critical!)
                 salary.setOneDaySalary(previousSalary.getOneDaySalary());
                 salary.setRegularHoursPerDay(previousSalary.getRegularHoursPerDay());
                 salary.setOneHourSalary(previousSalary.getOneHourSalary());
                 salary.setOtPerHour(previousSalary.getOtPerHour());
-
+                salary.setTotalSalaryThisMonth(0.0);
+                salary.setTotalOvertimeHours(0.0);
                 salaryRepository.save(salary);
             } else {
                 throw new RuntimeException("No previous salary found for employee: " + employee.getName());
@@ -74,7 +80,6 @@ public class AttendanceService {
         }
 
         if (attendance == null) {
-            // Check in
             attendance = new Attendance();
             attendance.setEmployee(employee);
             attendance.setDate(today);
@@ -82,8 +87,11 @@ public class AttendanceService {
             attendance.setCheckInTime(nowUtc);
             attendance.setCheckedIn(true);
             attendance.setSunday(isSunday);
+            attendance.setGovernmentHoliday(isGovHoliday);
 
-            if (isSunday) {
+            if (isGovHoliday) {
+                attendance.setStatus(AttendanceStatus.OT_GOVT_HOLIDAY);
+            } else if (isSunday) {
                 if (salary.getWorkingDays() == 30) {
                     salary.setTotalSalaryThisMonth(salary.getTotalSalaryThisMonth() - salary.getOneDaySalary());
                     salaryRepository.save(salary);
@@ -95,63 +103,88 @@ public class AttendanceService {
 
             attendanceRepository.save(attendance);
             return "Checked in successfully!";
-        } else {
-            // Check out
-            if (!attendance.isCheckedIn()) {
-                return "Already checked out.";
-            }
-            if (attendance.getCheckInTime() == null) {
-                throw new IllegalStateException("Cannot check out, check-in time is missing for attendance record ID: " + attendance.getId());
-            }
-
-            attendance.setCheckOutTime(nowUtc);
-            attendance.setCheckedIn(false);
-            calculateDailySalary(employee, attendance);
-
-            return String.format("Checked out successfully! Worked %.2f hours (%.2f regular + %.2f OT). Earned ₹%.2f",
-                    attendance.getRegularHours() + attendance.getOvertimeHours(),
-                    attendance.getRegularHours(),
-                    attendance.getOvertimeHours(),
-                    attendance.getDaySalary());
         }
+
+        // Auto-paid holiday → convert to real OT day
+        if (!attendance.isCheckedIn()
+                && attendance.getStatus() == AttendanceStatus.GOVT_HOLIDAY_AUTO_PAID) {
+
+            attendance.setCheckInTime(nowUtc);
+            attendance.setCheckedIn(true);
+            attendance.setGovernmentHoliday(true);
+            attendance.setBarcodeId(barcodeId);
+
+            Salary s = salaryRepository.findByEmployeeAndMonthAndYear(employee, today.getMonthValue(), today.getYear());
+            if (s != null && attendance.getDaySalary() > 0) {
+                double subtract = s.getOneDaySalary();
+                s.setTotalSalaryThisMonth(s.getTotalSalaryThisMonth() - subtract);
+                salaryRepository.save(s);
+            }
+
+            attendance.setStatus(AttendanceStatus.OT_GOVT_HOLIDAY);
+            attendance.setDaySalary(0.0);
+            attendanceRepository.save(attendance);
+
+            return "Checked in successfully (holiday overridden to OT).";
+        }
+
+        if (!attendance.isCheckedIn()) {
+            return "Already checked out.";
+        }
+        if (attendance.getCheckInTime() == null) {
+            throw new IllegalStateException("Cannot check out, check-in time missing.");
+        }
+
+        attendance.setCheckOutTime(nowUtc);
+        attendance.setCheckedIn(false);
+        calculateDailySalary(employee, attendance);
+
+        return String.format(
+                "Checked out successfully! Worked %.2f hours (%.2f regular + %.2f OT). Earned ₹%.2f",
+                attendance.getRegularHours() + attendance.getOvertimeHours(),
+                attendance.getRegularHours(),
+                attendance.getOvertimeHours(),
+                attendance.getDaySalary()
+        );
     }
 
     public void calculateDailySalary(Employee employee, Attendance attendance) {
+
         if (attendance.getCheckInTime() == null || attendance.getCheckOutTime() == null) {
-            throw new IllegalArgumentException("Check-in or Check-out time is missing for attendance ID: " + attendance.getId());
+            throw new IllegalArgumentException("Missing check-in/check-out time.");
         }
 
         ZonedDateTime checkIn = attendance.getCheckInTime();
         ZonedDateTime checkOut = attendance.getCheckOutTime();
-
         LocalDate date = attendance.getDate();
         boolean isSunday = date.getDayOfWeek() == DayOfWeek.SUNDAY;
+        boolean isGovHoliday = attendance.isGovernmentHoliday();
 
         Salary salary = salaryRepository.findByEmployeeAndMonthAndYear(
                 employee, date.getMonthValue(), date.getYear());
         if (salary == null) {
-            throw new RuntimeException("Salary configuration missing for employee.");
+            throw new RuntimeException("Salary config missing.");
         }
 
-        Duration duration = Duration.between(checkIn, checkOut);
-        double totalWorkedHours = duration.toMinutes() / 60.0;
-        if (totalWorkedHours < 0) {
-            totalWorkedHours = 0;
-            System.err.println("Warning: Negative worked hours calculated for attendance ID: " + attendance.getId());
-        }
+        double totalWorkedHours = Duration.between(checkIn, checkOut).toMinutes() / 60.0;
+        if (totalWorkedHours < 0) totalWorkedHours = 0;
 
         double oneHourSalary = salary.getOneHourSalary();
         double otPerHour = salary.getOtPerHour();
         int workingDays = salary.getWorkingDays();
 
-        double daySalary = 0.0;
-        double otHours = 0.0;
-        double regularHours = 0.0;
+        double daySalary = 0.0, otHours = 0.0, regularHours = 0.0;
 
-        if (isSunday) {
+        if (isGovHoliday) {
+            otHours = totalWorkedHours;
+            daySalary = otHours * otPerHour;
+            attendance.setStatus(AttendanceStatus.OT_GOVT_HOLIDAY);
+
+        } else if (isSunday) {
             otHours = totalWorkedHours;
             daySalary = otHours * otPerHour;
             attendance.setStatus(AttendanceStatus.OT_SUNDAY);
+
         } else {
             if (workingDays == 26) {
                 if (totalWorkedHours <= 12.0) {
@@ -162,7 +195,7 @@ public class AttendanceService {
                     otHours = totalWorkedHours - 12.0;
                     daySalary = (regularHours * oneHourSalary) + (otHours * otPerHour);
                 }
-            } else { // 30-day workers on a weekday
+            } else {
                 if (totalWorkedHours <= 8.5) {
                     regularHours = totalWorkedHours;
                     daySalary = regularHours * oneHourSalary;

@@ -76,6 +76,8 @@ public class PublicController {
     public String HelloController(){
         return "Hello World";
     }
+
+    //Checking the attendance
     @PostMapping("/check-attendance")
     public ResponseEntity<Boolean> checkAttendance(@RequestBody Barcode barcode) {
         if (barcode == null || barcode.getBarcodeId() == null || barcode.getBarcodeId().isEmpty()) {

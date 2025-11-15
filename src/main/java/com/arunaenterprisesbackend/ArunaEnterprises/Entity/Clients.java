@@ -22,20 +22,20 @@ public class Clients {
     private String client;
     private String clientNormalizer;
 
-    private String product;
+    private String product; //
     private String productNormalizer;
     private String productType;
-    private String size;
-    private String ply;
-    private double deckle;
+    private String size; //403 X 459 X 233
+    private String ply; //3 - ply layers
+    private double deckle; //length
     private double cuttingLength;
     private int topGsm;
     private int linerGsm;
     private int bottomGsm;
     private int fluteGsm;
 
-    private String madeUpOf;
-    private String paperTypeTop;
+    private String madeUpOf; //2-piece , 1 ups
+    private String paperTypeTop; // Natural , duplex
     private String paperTypeBottom;
     private String paperTypeFlute;
 
