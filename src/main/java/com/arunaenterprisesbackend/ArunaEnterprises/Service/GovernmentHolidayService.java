@@ -21,9 +21,7 @@ public class GovernmentHolidayService {
     @Autowired private AttendanceRepository attendanceRepository;
     @Autowired private SalaryRepository salaryRepository;
 
-    /**
-     * Adds a government holiday and pre-fills attendance for all active employees (auto-paid).
-     */
+
     @Transactional
     public GovernmentHoliday createHolidayAndPrefill(LocalDate date, String reason) {
 
@@ -41,7 +39,6 @@ public class GovernmentHolidayService {
 
             if (salary == null) continue;
 
-            // ✔ Skip if attendance exists (employee comes on holiday)
             if (attendanceRepository.findByEmployeeAndDate(emp, date) != null) continue;
 
             Attendance a = new Attendance();
@@ -57,7 +54,6 @@ public class GovernmentHolidayService {
 
             attendanceRepository.save(a);
 
-            // 👉 Add normal salary immediately for both workers
             salary.setTotalSalaryThisMonth(
                     salary.getTotalSalaryThisMonth() + salary.getOneDaySalary()
             );
