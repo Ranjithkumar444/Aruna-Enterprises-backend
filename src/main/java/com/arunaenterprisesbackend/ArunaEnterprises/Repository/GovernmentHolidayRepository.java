@@ -11,4 +11,5 @@ import java.util.List;
 public interface GovernmentHolidayRepository extends JpaRepository<GovernmentHoliday, Long> {
     boolean existsByHolidayDate(LocalDate date);
     List<GovernmentHoliday> findByHolidayDateBetween(LocalDate start, LocalDate end);
+    List<GovernmentHoliday> findAll();
 }

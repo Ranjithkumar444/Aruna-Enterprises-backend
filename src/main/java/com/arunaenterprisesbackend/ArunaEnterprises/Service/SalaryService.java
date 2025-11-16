@@ -128,8 +128,7 @@ public class SalaryService {
                 salary.setTotalSalaryThisMonth(0.0);
                 salary.setTotalOvertimeHours(0.0);
 
-                // Copy settings from last month
-                // Copy settings from last month
+
                 Salary latestSalary = salaryRepository.findTopByEmployeeOrderByYearDescMonthDesc(employee);
                 if (latestSalary != null) {
                     salary.setMonthlyBaseSalary(latestSalary.getMonthlyBaseSalary());
