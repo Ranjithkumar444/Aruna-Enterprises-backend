@@ -16,7 +16,6 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 
-
 @Service
 public class ReelService {
 
@@ -44,10 +43,28 @@ public class ReelService {
         LocalDate createdAt = LocalDate.now(IST_ZONE);
         reel.setCreatedAt(createdAt);
 
-        long countToday = reelRepository.countByCreatedAt(createdAt);
+        List<Reel> reelsToday = reelRepository.findByCreatedAt(createdAt);
 
+        long maxSeq = 0;
         String dateString = createdAt.toString().replaceAll("-", ""); // e.g. 20250707
-        String barcodeId = "REEL-" + (countToday + 1) + dateString;
+
+        for (Reel r : reelsToday) {
+            String bId = r.getBarcodeId();
+            // Expected format: REEL-{seq}{dateString}
+            if (bId != null && bId.startsWith("REEL-") && bId.endsWith(dateString)) {
+                try {
+                    String seqStr = bId.substring(5, bId.length() - dateString.length());
+                    long seq = Long.parseLong(seqStr);
+                    if (seq > maxSeq) {
+                        maxSeq = seq;
+                    }
+                } catch (NumberFormatException e) {
+                    // Ignore invalid formats
+                }
+            }
+        }
+
+        String barcodeId = "REEL-" + (maxSeq + 1) + dateString;
         reel.setBarcodeId(barcodeId);
 
         byte[] barcodeImage = BarcodeGenerator.generateBarcodeImage(barcodeId);
