@@ -84,6 +84,7 @@ public class ReelController {
             ReelRegistrationResponseDTO response = reelService.registerReel(reeldata);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .header("X-Error-Message", e.getMessage() != null ? e.getMessage() : "Internal error")
                     .body(new ReelRegistrationResponseDTO(null));
