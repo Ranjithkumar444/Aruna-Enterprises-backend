@@ -37,34 +37,9 @@ public class ReelService {
         reel.setPreviousWeight(reeldata.getInitialWeight());
         reel.setSupplierName(reeldata.getSupplierName());
         reel.setPaperTypeNormalized(reeldata.getPaperType().toLowerCase().replaceAll("[^a-z0-9]", ""));
-        reel.setUnit(reeldata.getUnit());
-        reel.setPaperType(reeldata.getPaperType());
+        reel.setPaperTypeNormalized(reeldata.getPaperType().toLowerCase().replaceAll("[^a-z0-9]", ""));
 
-        LocalDate createdAt = LocalDate.now(IST_ZONE);
-        reel.setCreatedAt(createdAt);
-
-        List<Reel> reelsToday = reelRepository.findByCreatedAt(createdAt);
-
-        long maxSeq = 0;
-        String dateString = createdAt.toString().replaceAll("-", ""); // e.g. 20250707
-
-        for (Reel r : reelsToday) {
-            String bId = r.getBarcodeId();
-            // Expected format: REEL-{seq}{dateString}
-            if (bId != null && bId.startsWith("REEL-") && bId.endsWith(dateString)) {
-                try {
-                    String seqStr = bId.substring(5, bId.length() - dateString.length());
-                    long seq = Long.parseLong(seqStr);
-                    if (seq > maxSeq) {
-                        maxSeq = seq;
-                    }
-                } catch (NumberFormatException e) {
-                    // Ignore invalid formats
-                }
-            }
-        }
-
-        String barcodeId = "REEL-" + (maxSeq + 1) + dateString;
+        String barcodeId = "REEL-" + System.currentTimeMillis();
         reel.setBarcodeId(barcodeId);
 
         byte[] barcodeImage = BarcodeGenerator.generateBarcodeImage(barcodeId);
