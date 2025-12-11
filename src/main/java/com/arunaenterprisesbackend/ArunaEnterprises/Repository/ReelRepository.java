@@ -1,5 +1,7 @@
 package com.arunaenterprisesbackend.ArunaEnterprises.Repository;
 
+
+import com.arunaenterprisesbackend.ArunaEnterprises.DTO.ReelStockSummaryDTO;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Reel;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.ReelStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -68,5 +70,16 @@ public interface ReelRepository extends JpaRepository<Reel, Long> {
             @Param("maxDeckle") double maxDeckle,
             @Param("paperTypeNorm") String paperTypeNorm,
             @Param("statuses") List<ReelStatus> statuses);
+
+//    this is for tracking reels
+// JPQL Query matches your SQL logic exactly
+// Filters out 'USE_COMPLETED' and Groups by Unit, Deckle, GSM, BF
+@Query("SELECT new com.arunaenterprisesbackend.ArunaEnterprises.DTO.ReelStockSummaryDTO(" +
+        "r.unit, r.deckle, r.gsm, r.burstFactor, COUNT(r)) " +
+        "FROM Reel r " +
+        "WHERE r.status <> 'USE_COMPLETED' " +
+        "GROUP BY r.unit, r.deckle, r.gsm, r.burstFactor " +
+        "ORDER BY r.unit ASC, r.deckle ASC, r.gsm ASC, r.burstFactor ASC")
+List<ReelStockSummaryDTO> findReelStockSummary();
 
 }
