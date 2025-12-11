@@ -16,7 +16,6 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 
-
 @Service
 public class ReelService {
 
@@ -38,16 +37,9 @@ public class ReelService {
         reel.setPreviousWeight(reeldata.getInitialWeight());
         reel.setSupplierName(reeldata.getSupplierName());
         reel.setPaperTypeNormalized(reeldata.getPaperType().toLowerCase().replaceAll("[^a-z0-9]", ""));
-        reel.setUnit(reeldata.getUnit());
-        reel.setPaperType(reeldata.getPaperType());
+        reel.setPaperTypeNormalized(reeldata.getPaperType().toLowerCase().replaceAll("[^a-z0-9]", ""));
 
-        LocalDate createdAt = LocalDate.now(IST_ZONE);
-        reel.setCreatedAt(createdAt);
-
-        long countToday = reelRepository.countByCreatedAt(createdAt);
-
-        String dateString = createdAt.toString().replaceAll("-", ""); // e.g. 20250707
-        String barcodeId = "REEL-" + (countToday + 1) + dateString;
+        String barcodeId = "REEL-" + System.currentTimeMillis();
         reel.setBarcodeId(barcodeId);
 
         byte[] barcodeImage = BarcodeGenerator.generateBarcodeImage(barcodeId);

@@ -32,24 +32,24 @@ public interface ReelRepository extends JpaRepository<Reel, Long> {
 
     @Query("SELECT r FROM Reel r WHERE r.deckle >= :minDeckle AND r.deckle <= :maxDeckle AND r.status IN :statuses")
     List<Reel> findAvailableByDeckleRange(
-            @Param("minDeckle") int minDeckle, // Changed to int
-            @Param("maxDeckle") int maxDeckle, // Changed to int
-            @Param("statuses") List<ReelStatus> statuses
-    );
+            @Param("minDeckle") int minDeckle,
+            @Param("maxDeckle") int maxDeckle,
+            @Param("statuses") List<ReelStatus> statuses);
 
     @Query("""
-      SELECT r FROM Reel r
-      WHERE r.status IN :statuses
-        AND r.deckle BETWEEN :minDeckle AND :maxDeckle
-        AND r.currentWeight > 0
-      """)
+                        SELECT r FROM Reel r
+                        WHERE r.status IN :statuses
+                          AND r.deckle BETWEEN :minDeckle AND :maxDeckle
+                          AND r.currentWeight > 0
+                        """)
     List<Reel> findAvailableByDeckleRange(
             @Param("minDeckle") double minDeckle,
             @Param("maxDeckle") double maxDeckle,
-            @Param("statuses") List<ReelStatus> statuses
-    );
+            @Param("statuses") List<ReelStatus> statuses);
+
     long countByCreatedAt(LocalDate createdAt);
 
+    List<Reel> findByCreatedAt(LocalDate createdAt);
 
     @Query("SELECT r.deckle, r.gsm, r.unit, SUM(r.currentWeight) " +
             "FROM Reel r GROUP BY r.deckle, r.gsm, r.unit")

@@ -1,19 +1,13 @@
-FROM maven:3.8.4-openjdk-17 AS build
+# Use lightweight Java runtime
+FROM eclipse-temurin:21-jdk-alpine
 
 WORKDIR /app
 
-COPY pom.xml .
-RUN mvn dependency:go-offline
+# copy jar produced by maven
+COPY target/*.jar app.jar
 
-COPY src ./src
-RUN mvn clean package -DskipTests
-
-FROM openjdk:17-jdk-slim
-
-WORKDIR /app
-
-COPY --from=build /app/target/ArunaEnterprises-0.0.1-SNAPSHOT.jar ./app.jar
-
+# expose port (change if your app uses different port)
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# JVM memory limits for lower resource usage
+ENTRYPOINT ["java","-Xms256m","-Xmx512m","-jar","/app/app.jar"]

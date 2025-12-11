@@ -3,6 +3,7 @@ package com.arunaenterprisesbackend.ArunaEnterprises.Controller;
 import com.arunaenterprisesbackend.ArunaEnterprises.DTO.*;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.*;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.*;
+import com.arunaenterprisesbackend.ArunaEnterprises.Service.InventoryService;
 import com.arunaenterprisesbackend.ArunaEnterprises.Service.JWTService;
 import com.arunaenterprisesbackend.ArunaEnterprises.Service.ReelService;
 import com.arunaenterprisesbackend.ArunaEnterprises.Service.ReelStockAlertService;
@@ -13,7 +14,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -44,6 +44,21 @@ public class ReelController {
     private ReelStockAlertService reelStockAlertService;
 
     @Autowired private JWTService jwtService;
+
+    @Autowired
+    private ARepository aRepository;
+
+    @Autowired
+    private BRepository bRepository;
+
+    @Autowired
+    private CRepository cRepository;
+
+    @Autowired
+    private DRepository dRepository;
+
+    @Autowired
+    private InventoryService inventoryService;
 
     @PostMapping("/reel/stock/alert")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
@@ -84,6 +99,7 @@ public class ReelController {
             ReelRegistrationResponseDTO response = reelService.registerReel(reeldata);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .header("X-Error-Message", e.getMessage() != null ? e.getMessage() : "Internal error")
                     .body(new ReelRegistrationResponseDTO(null));
@@ -419,6 +435,80 @@ public class ReelController {
 
         return ResponseEntity.ok(usageHistoryList);
     }
+
+    @GetMapping("/inventory/A")
+    public List<A> getAItems() {
+        return aRepository.findAll();
+    }
+
+    @GetMapping("/inventory/B")
+    public List<B> getBItems() {
+        return bRepository.findAll();
+    }
+
+    @GetMapping("/inventory/C")
+    public List<C> getCItems() {
+        return cRepository.findAll();
+    }
+
+    @GetMapping("/inventory/D")
+    public List<D> getDItems() {
+        return dRepository.findAll();
+    }
+
+    @PutMapping("/inventory/A")
+    public ResponseEntity<A> updateA(@RequestBody UpdateRequest req) {
+
+        A item = aRepository.findByProduct(req.getProduct());
+
+        if (item == null)
+            return ResponseEntity.notFound().build();
+
+        int oldCount = item.getCount();
+        item.setCount(req.getCount());
+
+        A saved = aRepository.save(item);
+        inventoryService.saveHistory("A", req.getProduct(), oldCount, req.getCount());
+
+        return ResponseEntity.ok(saved);
+    }
+
+    @PutMapping("/inventory/B")
+    public ResponseEntity<B> updateB(@RequestBody UpdateRequest req) {
+        B item = bRepository.findByProduct(req.getProduct());
+        if (item == null) return ResponseEntity.notFound().build();
+
+        int old = item.getCount();
+        item.setCount(req.getCount());
+        B saved = bRepository.save(item);
+        inventoryService.saveHistory("B", req.getProduct(), old, req.getCount());
+        return ResponseEntity.ok(saved);
+    }
+
+    @PutMapping("/inventory/C")
+    public ResponseEntity<C> updateC(@RequestBody UpdateRequest req) {
+        C item = cRepository.findByProduct(req.getProduct());
+        if (item == null) return ResponseEntity.notFound().build();
+
+        int old = item.getCount();
+        item.setCount(req.getCount());
+        C saved = cRepository.save(item);
+        inventoryService.saveHistory("C", req.getProduct(), old, req.getCount());
+        return ResponseEntity.ok(saved);
+    }
+
+    @PutMapping("/inventory/D")
+    public ResponseEntity<D> updateD(@RequestBody UpdateRequest req) {
+        D item = dRepository.findByProduct(req.getProduct());
+        if (item == null) return ResponseEntity.notFound().build();
+
+        int old = item.getCount();
+        item.setCount(req.getCount());
+        D saved = dRepository.save(item);
+        inventoryService.saveHistory("D", req.getProduct(), old, req.getCount());
+        return ResponseEntity.ok(saved);
+    }
+
 
 }
 

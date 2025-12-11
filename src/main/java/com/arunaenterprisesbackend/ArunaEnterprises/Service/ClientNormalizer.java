@@ -14,7 +14,7 @@ public class ClientNormalizer {
 
     private final OrderRepository orderRepository;
 
-    @PostConstruct
+    // @PostConstruct
     public void normalizeOldClients() {
         List<Order> all = orderRepository.findAll();
         for (Order o : all) {
