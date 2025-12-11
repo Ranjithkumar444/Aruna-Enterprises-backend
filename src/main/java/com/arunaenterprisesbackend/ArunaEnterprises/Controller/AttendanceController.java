@@ -17,6 +17,9 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import java.util.TreeMap;
+
+
 
 @RestController
 @RequestMapping("/admin")
@@ -97,4 +100,41 @@ public class AttendanceController {
         System.out.println("UTC Time: " + ZonedDateTime.now(ZoneOffset.UTC));
         System.out.println("IST Time: " + ZonedDateTime.now(ZoneOffset.UTC).withZoneSameInstant(ZoneId.of("Asia/Kolkata")));
     }
+
+//    this method is created for sending attendance data for today
+@GetMapping("/present-today")
+public ResponseEntity<Map<String, List<AttendanceResponseDTO>>> getPresentEmployeesToday() {
+    // 1. Get Today's Date in IST
+    LocalDate today = LocalDate.now(IST_ZONE);
+
+    // 2. Fetch ONLY attendance records that exist for today
+    List<Attendance> presentRecords = attendanceRepository.findByDate(today);
+
+    // 3. Stream, Filter, and Group by Unit
+    Map<String, List<AttendanceResponseDTO>> response = presentRecords.stream()
+            .filter(a -> a.getCheckInTime() != null) // Only actual check-ins
+            .collect(Collectors.groupingBy(
+                    // Key Mapper: Group by Unit Name
+                    attendance -> attendance.getEmployee().getUnit(),
+
+                    // Map Factory: Use TreeMap to sort Units alphabetically (Unit A, then Unit B...)
+                    TreeMap::new,
+
+                    // Downstream Collector: Convert Attendance Entity to DTO
+                    Collectors.mapping(attendance -> new AttendanceResponseDTO(
+                            attendance.getEmployee().getName(),
+                            attendance.getBarcodeId(),
+                            attendance.getDate(),
+                            attendance.getCheckInTime() != null ? attendance.getCheckInTime().withZoneSameInstant(IST_ZONE) : null,
+                            attendance.getCheckOutTime() != null ? attendance.getCheckOutTime().withZoneSameInstant(IST_ZONE) : null,
+                            attendance.getStatus() != null ? attendance.getStatus().toString() : "PRESENT",
+                            attendance.getRegularHours(),
+                            attendance.getOvertimeHours(),
+                            attendance.getDaySalary(),
+                            attendance.getDate().getDayOfWeek() == DayOfWeek.SUNDAY
+                    ), Collectors.toList())
+            ));
+
+    return ResponseEntity.ok(response);
+}
 }

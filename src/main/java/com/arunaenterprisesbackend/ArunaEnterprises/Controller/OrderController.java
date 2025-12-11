@@ -3,10 +3,7 @@ package com.arunaenterprisesbackend.ArunaEnterprises.Controller;
 import com.arunaenterprisesbackend.ArunaEnterprises.DTO.OrderDTO;
 import com.arunaenterprisesbackend.ArunaEnterprises.DTO.OrderSplitDTO;
 import com.arunaenterprisesbackend.ArunaEnterprises.DTO.SuggestedReelsResponseDTO;
-import com.arunaenterprisesbackend.ArunaEnterprises.Entity.Order;
-import com.arunaenterprisesbackend.ArunaEnterprises.Entity.OrderReelUsage;
-import com.arunaenterprisesbackend.ArunaEnterprises.Entity.OrderStatus;
-import com.arunaenterprisesbackend.ArunaEnterprises.Entity.ProductionDetail;
+import com.arunaenterprisesbackend.ArunaEnterprises.Entity.*;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.OrderReelUsageRepository;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.OrderRepository;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.OrderSuggestedReelsRepository;
@@ -25,6 +22,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import com.arunaenterprisesbackend.ArunaEnterprises.DTO.DailyProductionUsageDTO;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
+
 @RestController
 @RequestMapping("/admin")
 public class OrderController {
@@ -40,6 +43,9 @@ public class OrderController {
 
     @Autowired
     private OrderSuggestedReelsRepository orderSuggestedReelsRepository;
+
+    @Autowired
+    private com.arunaenterprisesbackend.ArunaEnterprises.Repository.ReelRepository reelRepository;
 
     @PostMapping("/order/create-order")
     public ResponseEntity<SuggestedReelsResponseDTO> createOrderCnt(@RequestBody OrderDTO order) {
@@ -214,5 +220,88 @@ public class OrderController {
     @AllArgsConstructor
     private static class ErrorResponse {
         private String message;
+    }
+
+//    THIS IS FOR DAILY REPORTING PURPOSE
+//    ***********************************
+    @GetMapping("/order/daily-production-usage")
+    public ResponseEntity<Map<String, List<DailyProductionUsageDTO>>> getDailyProductionUsage() {
+        try {
+            // 1. Define Timezone (IST)
+            ZoneId istZone = ZoneId.of("Asia/Kolkata");
+
+            // 2. Calculate Start and End of Today
+            LocalDate today = LocalDate.now(istZone);
+            ZonedDateTime startOfDay = today.atStartOfDay(istZone);
+            ZonedDateTime endOfDay = startOfDay.plusDays(1);
+
+            // 3. Fetch records
+            List<OrderReelUsage> usages = orderReelUsageRepository.findByCourgationDateRange(startOfDay, endOfDay);
+
+            // 4. Stream, Map, and Group by Unit
+            Map<String, List<DailyProductionUsageDTO>> response = usages.stream()
+                    .collect(Collectors.groupingBy(
+                            // Key Mapper: Group by Order Unit (Handle nulls safely)
+                            usage -> (usage.getOrder() != null && usage.getOrder().getUnit() != null)
+                                    ? usage.getOrder().getUnit()
+                                    : "Unknown Unit",
+
+                            // Map Factory: Sort Units Alphabetically (Unit A, Unit B...)
+                            TreeMap::new,
+
+                            // Downstream Collector: Map Entity to DTO
+                            Collectors.mapping(usage -> {
+                                Order order = usage.getOrder();
+                                Reel reel = usage.getReel();
+
+                                return new DailyProductionUsageDTO(
+                                        // OrderReelUsage Fields
+                                        usage.getId(),
+                                        usage.getWeightConsumed(),
+                                        usage.getCourgationIn() != null ? usage.getCourgationIn().withZoneSameInstant(istZone) : null,
+                                        usage.getCourgationOut() != null ? usage.getCourgationOut().withZoneSameInstant(istZone) : null,
+                                        usage.getRecordedBy(),
+                                        usage.getUsageType(),
+                                        usage.getHowManyBox(),
+                                        usage.getPreviousWeight(),
+
+                                        // Order Fields
+                                        order != null ? order.getClient() : "N/A",
+                                        order != null ? order.getProductType() : "N/A",
+                                        order != null ? order.getTypeOfProduct() : "N/A",
+                                        order != null ? order.getProductName() : "N/A",
+                                        order != null ? order.getQuantity() : 0,
+                                        order != null ? order.getSize() : "N/A",
+
+                                        // Reel Fields
+                                        reel != null ? reel.getBarcodeId() : "N/A",
+                                        reel != null ? reel.getReelNo() : 0L,
+                                        reel != null ? reel.getGsm() : 0,
+                                        reel != null ? reel.getBurstFactor() : 0,
+                                        reel != null ? reel.getDeckle() : 0,
+                                        reel != null ? reel.getPaperType() : "N/A"
+                                );
+                            }, Collectors.toList())
+                    ));
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+//    this is also for daily reporting purpose
+
+
+    @GetMapping("/reels/stock-summary")
+    public ResponseEntity<List<com.arunaenterprisesbackend.ArunaEnterprises.DTO.ReelStockSummaryDTO>> getReelStockSummary() {
+        try {
+            List<com.arunaenterprisesbackend.ArunaEnterprises.DTO.ReelStockSummaryDTO> summary = reelRepository.findReelStockSummary();
+            return ResponseEntity.ok(summary);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 }

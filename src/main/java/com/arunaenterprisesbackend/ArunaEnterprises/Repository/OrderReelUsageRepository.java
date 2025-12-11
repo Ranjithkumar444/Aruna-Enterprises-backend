@@ -41,4 +41,14 @@ public interface OrderReelUsageRepository extends JpaRepository<OrderReelUsage,L
     List<OrderReelUsage> findByOrder(Order order);
 
     List<OrderReelUsage> findByReel(Reel reel);
+
+    //    THIS IS FOR DAILY REPORTING PURPOSE
+//    ***********************************
+    @Query("SELECT u FROM OrderReelUsage u WHERE " +
+            "(u.courgationIn >= :start AND u.courgationIn < :end) " +
+            "OR (u.courgationOut >= :start AND u.courgationOut < :end)")
+    List<OrderReelUsage> findByCourgationDateRange(
+            @Param("start") ZonedDateTime start,
+            @Param("end") ZonedDateTime end
+    );
 }
