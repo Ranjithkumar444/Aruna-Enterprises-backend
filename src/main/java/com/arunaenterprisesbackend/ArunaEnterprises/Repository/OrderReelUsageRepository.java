@@ -51,4 +51,15 @@ public interface OrderReelUsageRepository extends JpaRepository<OrderReelUsage,L
             @Param("start") ZonedDateTime start,
             @Param("end") ZonedDateTime end
     );
+
+    Optional<OrderReelUsage> findByReel_IdAndCourgationOutIsNull(Long reelId);
+
+    @Query("""
+    SELECT uru FROM OrderReelUsage uru
+    WHERE uru.reel.id = :reelId
+      AND DATE(uru.courgationIn) = CURRENT_DATE
+    ORDER BY uru.courgationIn DESC
+""")
+    Optional<OrderReelUsage> findLatestTodayUsageByReel(@Param("reelId") Long reelId);
+
 }

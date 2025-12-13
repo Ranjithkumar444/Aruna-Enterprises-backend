@@ -72,6 +72,9 @@ public class PublicController {
     @Autowired
     private SuggestedReelRepository suggestedReelRepository;
 
+    @Autowired
+    private ClientRepository clientRepository;
+
     @GetMapping("/greet")
     public String HelloController(){
         return "Hello World";
@@ -475,5 +478,106 @@ public class PublicController {
             return ResponseEntity.badRequest().body(e);
         }
     }
+
+    @GetMapping("/autofilling/{barcodeId}")
+    public ResponseEntity<ReelCalculationAutoFillDTO> getAutoFill(
+            @PathVariable String barcodeId) {
+
+        // 1. Reel
+        Reel reel = reelRepository.findByBarcodeId(barcodeId);
+        if (reel == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        // 2. Today's latest reel usage
+        OrderReelUsage usage = orderReelUsageRepository
+                .findLatestTodayUsageByReel(reel.getId())
+                .orElseThrow(() ->
+                        new RuntimeException("No reel usage found for today"));
+
+        // 3. Order
+        Order order = usage.getOrder();
+        if (order == null) {
+            throw new RuntimeException("Order not linked with reel usage");
+        }
+
+        // 4. Client config (clientNormalizer + size)
+        Clients client = clientRepository
+                .findByClientNormalizerAndSize(
+                        order.getNormalizedClient(),
+                        order.getSize()
+                )
+                .orElseThrow(() ->
+                        new RuntimeException(
+                                "Client configuration not found for size: " + order.getSize()
+                        ));
+
+        // 5. Parse size safely
+        double[] dims = parseSizeSafe(client.getSize());
+
+        // 6. Build response DTO
+        ReelCalculationAutoFillDTO dto = new ReelCalculationAutoFillDTO();
+        dto.setGsm(reel.getGsm());
+        dto.setDeckle(reel.getDeckle());
+
+        dto.setLength(dims[0]);
+        dto.setWidth(dims[1]);
+        dto.setHeight(dims[2]);
+
+        dto.setPly(extractPly(client.getPly()));
+        dto.setCuttingLength((int) client.getCuttingLength());
+
+        return ResponseEntity.ok(dto);
+    }
+
+    private double[] parseSize(String size) {
+        if (size == null || size.isBlank()) {
+            throw new IllegalArgumentException("Size is empty");
+        }
+
+        String[] parts = size.toLowerCase().replace(" ", "").split("x");
+        if (parts.length != 3) {
+            throw new IllegalArgumentException("Invalid size format. Expected LxWxH");
+        }
+
+        return new double[]{
+                Double.parseDouble(parts[0]),
+                Double.parseDouble(parts[1]),
+                Double.parseDouble(parts[2])
+        };
+    }
+
+    private int extractPly(String ply) {
+        if (ply == null || ply.isBlank()) {
+            return 0;
+        }
+        return Integer.parseInt(ply.replaceAll("\\D+", ""));
+    }
+
+    private double[] parseSizeSafe(String size) {
+
+        if (size == null || size.isBlank()) {
+            return new double[]{0, 0, 0};
+        }
+
+        String[] parts = size
+                .toLowerCase()
+                .replace(" ", "")
+                .split("x");
+
+        double l = 0, w = 0, h = 0;
+
+        if (parts.length >= 2) {
+            l = Double.parseDouble(parts[0]);
+            w = Double.parseDouble(parts[1]);
+        }
+
+        if (parts.length == 3) {
+            h = Double.parseDouble(parts[2]);
+        }
+
+        return new double[]{l, w, h};
+    }
+
 
 }
