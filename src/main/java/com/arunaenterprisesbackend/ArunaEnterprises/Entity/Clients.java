@@ -22,7 +22,7 @@ public class Clients {
     private String client;
     private String clientNormalizer;
 
-    private String product; //
+    private String product;
     private String productNormalizer;
     private String productType;
     private String size; //403 X 459 X 233
