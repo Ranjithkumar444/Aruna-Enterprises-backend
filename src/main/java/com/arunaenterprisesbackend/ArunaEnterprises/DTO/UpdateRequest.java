@@ -15,9 +15,9 @@ import javax.validation.constraints.NotNull;
 @AllArgsConstructor
 public class UpdateRequest {
     @NotBlank(message = "product is required")
-    private String product;   // e.g. "PastingGumBag"
+    private String product;
 
     @NotNull(message = "count is required")
     @Min(value = 0, message = "count must be >= 0")
-    private Integer count;    // new count value
+    private Integer count;
 }

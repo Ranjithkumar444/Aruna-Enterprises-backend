@@ -6,6 +6,7 @@ import com.arunaenterprisesbackend.ArunaEnterprises.Entity.*;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.OrderReelUsage;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.*;
 import com.arunaenterprisesbackend.ArunaEnterprises.Service.AttendanceService;
+import com.arunaenterprisesbackend.ArunaEnterprises.Service.InventoryService;
 import com.arunaenterprisesbackend.ArunaEnterprises.Service.OrderService;
 import com.arunaenterprisesbackend.ArunaEnterprises.Service.WeightCalculation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.net.CacheRequest;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -74,6 +76,21 @@ public class PublicController {
 
     @Autowired
     private ClientRepository clientRepository;
+
+    @Autowired
+    private ARepository aRepository;
+
+    @Autowired
+    private BRepository bRepository;
+
+    @Autowired
+    private CRepository cRepository;
+
+    @Autowired
+    private DRepository dRepository;
+
+    @Autowired
+    private InventoryService inventoryService;
 
     @GetMapping("/greet")
     public String HelloController(){
@@ -579,5 +596,77 @@ public class PublicController {
         return new double[]{l, w, h};
     }
 
+    @GetMapping("/inventory/A")
+    public List<A> getAItems() {
+        return aRepository.findAll();
+    }
+
+    @GetMapping("/inventory/B")
+    public List<B> getBItems() {
+        return bRepository.findAll();
+    }
+
+    @GetMapping("/inventory/C")
+    public List<C> getCItems() {
+        return cRepository.findAll();
+    }
+
+    @GetMapping("/inventory/D")
+    public List<D> getDItems() {
+        return dRepository.findAll();
+    }
+
+    @PutMapping("/inventory/A")
+    public ResponseEntity<A> updateA(@RequestBody UpdateRequest req) {
+
+        A item = aRepository.findByProduct(req.getProduct());
+
+        if (item == null)
+            return ResponseEntity.notFound().build();
+
+        int oldCount = item.getCount();
+        item.setCount(req.getCount());
+
+        A saved = aRepository.save(item);
+        inventoryService.saveHistory("A", req.getProduct(), oldCount, req.getCount());
+
+        return ResponseEntity.ok(saved);
+    }
+
+    @PutMapping("/inventory/B")
+    public ResponseEntity<B> updateB(@RequestBody UpdateRequest req) {
+        B item = bRepository.findByProduct(req.getProduct());
+        if (item == null) return ResponseEntity.notFound().build();
+
+        int old = item.getCount();
+        item.setCount(req.getCount());
+        B saved = bRepository.save(item);
+        inventoryService.saveHistory("B", req.getProduct(), old, req.getCount());
+        return ResponseEntity.ok(saved);
+    }
+
+    @PutMapping("/inventory/C")
+    public ResponseEntity<C> updateC(@RequestBody UpdateRequest req) {
+        C item = cRepository.findByProduct(req.getProduct());
+        if (item == null) return ResponseEntity.notFound().build();
+
+        int old = item.getCount();
+        item.setCount(req.getCount());
+        C saved = cRepository.save(item);
+        inventoryService.saveHistory("C", req.getProduct(), old, req.getCount());
+        return ResponseEntity.ok(saved);
+    }
+
+    @PutMapping("/inventory/D")
+    public ResponseEntity<D> updateD(@RequestBody UpdateRequest req) {
+        D item = dRepository.findByProduct(req.getProduct());
+        if (item == null) return ResponseEntity.notFound().build();
+
+        int old = item.getCount();
+        item.setCount(req.getCount());
+        D saved = dRepository.save(item);
+        inventoryService.saveHistory("D", req.getProduct(), old, req.getCount());
+        return ResponseEntity.ok(saved);
+    }
 
 }
