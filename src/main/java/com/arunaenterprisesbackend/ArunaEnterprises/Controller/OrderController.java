@@ -1,8 +1,6 @@
 package com.arunaenterprisesbackend.ArunaEnterprises.Controller;
 
-import com.arunaenterprisesbackend.ArunaEnterprises.DTO.OrderDTO;
-import com.arunaenterprisesbackend.ArunaEnterprises.DTO.OrderSplitDTO;
-import com.arunaenterprisesbackend.ArunaEnterprises.DTO.SuggestedReelsResponseDTO;
+import com.arunaenterprisesbackend.ArunaEnterprises.DTO.*;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.*;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.OrderReelUsageRepository;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.OrderRepository;
@@ -22,7 +20,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import com.arunaenterprisesbackend.ArunaEnterprises.DTO.DailyProductionUsageDTO;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.TreeMap;
@@ -119,30 +116,10 @@ public class OrderController {
     }
 
     @GetMapping("/order/getOrdersByActiveStatus")
-    public ResponseEntity<List<Order>> getOrdersByActiveStatus() {
-        List<OrderStatus> activeStatuses = Arrays.asList(
-                OrderStatus.TODO,
-                OrderStatus.IN_PROGRESS,
-                OrderStatus.COMPLETED
-        );
-
-        // Fetch TODO, IN_PROGRESS, COMPLETED orders
-        List<Order> activeOrders = orderRepository.findByStatusIn(activeStatuses);
-
-        // Get current time in Central US time zone
-        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("America/Chicago"));
-        ZonedDateTime cutoff = now.minusDays(1);
-
-        // Fetch SHIPPED orders shipped within last 24 hours
-        List<Order> recentShippedOrders = orderRepository.findByStatusAndShippedAtAfter(
-                OrderStatus.SHIPPED,
-                cutoff
-        );
-
-        activeOrders.addAll(recentShippedOrders);
-
-        return ResponseEntity.ok(activeOrders);
+    public ResponseEntity<List<OrderToDoListDTO>> getOrdersByActiveStatus() {
+        return ResponseEntity.ok(orderservice.getOrdersByActiveStatus());
     }
+
 
     @GetMapping("/order/getOrdersToDoAndInProgress")
     public ResponseEntity<List<Order>> GetOrdersByActiveStatus() {

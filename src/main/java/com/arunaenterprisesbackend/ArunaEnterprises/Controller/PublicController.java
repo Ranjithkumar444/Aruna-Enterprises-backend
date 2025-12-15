@@ -530,7 +530,7 @@ public class PublicController {
                         ));
 
         // 5. Parse size safely
-        double[] dims = parseSizeSafe(client.getSize());
+        int[] dims = parseSizeSafe(client.getSize());
 
         // 6. Build response DTO
         ReelCalculationAutoFillDTO dto = new ReelCalculationAutoFillDTO();
@@ -547,7 +547,7 @@ public class PublicController {
         return ResponseEntity.ok(dto);
     }
 
-    private double[] parseSize(String size) {
+    private int[] parseSize(String size) {
         if (size == null || size.isBlank()) {
             throw new IllegalArgumentException("Size is empty");
         }
@@ -557,10 +557,10 @@ public class PublicController {
             throw new IllegalArgumentException("Invalid size format. Expected LxWxH");
         }
 
-        return new double[]{
-                Double.parseDouble(parts[0]),
-                Double.parseDouble(parts[1]),
-                Double.parseDouble(parts[2])
+        return new int[]{
+                Integer.parseInt(parts[0]),
+                Integer.parseInt(parts[1]),
+                Integer.parseInt(parts[2])
         };
     }
 
@@ -571,10 +571,10 @@ public class PublicController {
         return Integer.parseInt(ply.replaceAll("\\D+", ""));
     }
 
-    private double[] parseSizeSafe(String size) {
+    private int[] parseSizeSafe(String size) {
 
         if (size == null || size.isBlank()) {
-            return new double[]{0, 0, 0};
+            return new int[]{0, 0, 0};
         }
 
         String[] parts = size
@@ -582,18 +582,18 @@ public class PublicController {
                 .replace(" ", "")
                 .split("x");
 
-        double l = 0, w = 0, h = 0;
+        int l = 0, w = 0, h = 0;
 
         if (parts.length >= 2) {
-            l = Double.parseDouble(parts[0]);
-            w = Double.parseDouble(parts[1]);
+            l = Integer.parseInt(parts[0]);
+            w = Integer.parseInt(parts[1]);
         }
 
         if (parts.length == 3) {
-            h = Double.parseDouble(parts[2]);
+            h = Integer.parseInt(parts[2]);
         }
 
-        return new double[]{l, w, h};
+        return new int[]{l, w, h};
     }
 
     @GetMapping("/inventory/A")
