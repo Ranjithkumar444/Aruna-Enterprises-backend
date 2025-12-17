@@ -27,6 +27,9 @@ public class GovernmentHoliday {
         this.reason = reason;
     }
 
+    public GovernmentHoliday(Object o, LocalDate holiday, String republicDay) {
+    }
+
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
