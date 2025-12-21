@@ -4,6 +4,8 @@ import com.arunaenterprisesbackend.ArunaEnterprises.Entity.ReelStatus;
 import jakarta.persistence.Lob;
 import lombok.*;
 
+import java.time.LocalDate;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -21,4 +23,6 @@ public class ReelResponseDTO {
     private ReelStatus status;
     private String paperType;
     private Integer previousWeight;
+    private String unit;
+    private LocalDate createdAt;
 }

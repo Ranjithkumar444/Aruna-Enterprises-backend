@@ -302,8 +302,8 @@ public class OrderService {
 
         Order order = createAndSaveOrder(dto);
 
-        String productNorm =
-                order.getProductName().toLowerCase().replaceAll("[^a-z0-9]", "");
+        String productNorm = order.getProductName()
+                .toLowerCase().replaceAll("[^a-z0-9]", "");
 
         Optional<SuggestedReel> sropt =
                 suggestedReelRepository.findByClientNormalizerAndSizeAndProductNormalizer(
@@ -312,87 +312,36 @@ public class OrderService {
                         productNorm
                 );
 
-        Optional<Clients> clOpt =
-                clientRepository.findByClientNormalizerAndSizeAndProductNormalizer(
-                        order.getNormalizedClient(),
-                        order.getSize(),
-                        productNorm
-                );
+        SuggestedReel sr = null;
+        Clients client = null;
 
-        Clients cl = clOpt.orElseThrow(() ->
-                new RuntimeException("Client master not found")
-        );
-
-        // 🔑 Use SR if exists, else CLIENT
-        SuggestedReel sr = sropt.orElse(null);
-
-        // =====================================================
-        // 🔧 SOURCE SELECTION
-        // =====================================================
-        String ply;
-        double dkl;
-        double ctl;
-        int topgsm;
-        int linergsm;
-        int flutegsm;
-        String paperTop;
-        String paperBottom;
-        String paperFlute;
-        String fluteType;
-        double cutLenOneUps = 0;
-        double cutLenTwoUps = 0;
-
-        if (sr != null) {
-            ply = sr.getPly();
-            dkl = sr.getDeckle();
-            ctl = sr.getCuttingLength();
-            topgsm = sr.getTopGsm();
-            linergsm = sr.getLinerGsm();
-            flutegsm = sr.getFluteGsm();
-            paperTop = sr.getPaperTypeTop();
-            paperBottom = sr.getPaperTypeBottom();
-            paperFlute = sr.getPaperTypeFlute();
-            fluteType = sr.getFluteType();
-            cutLenOneUps = sr.getCuttingLengthOneUps();
-            cutLenTwoUps = sr.getCuttingLengthTwoUps();
+        if (sropt.isPresent()) {
+            sr = sropt.get();
         } else {
-            ply = cl.getPly();
-            dkl = cl.getDeckle();
-            ctl = cl.getCuttingLength();
-            topgsm = cl.getTopGsm();
-            linergsm = cl.getLinerGsm();
-            flutegsm = cl.getFluteGsm();
-            paperTop = cl.getPaperTypeTop();
-            paperBottom = cl.getPaperTypeBottom();
-            paperFlute = cl.getPaperTypeFlute();
-            fluteType = cl.getFluteType();
+            client = clientRepository
+                    .findByClientNormalizerAndSizeAndProductNormalizer(
+                            order.getNormalizedClient(),
+                            order.getSize(),
+                            productNorm
+                    )
+                    .orElseThrow(() -> new RuntimeException("Client master not found"));
         }
 
-        boolean needsFlute = flutegsm != linergsm;
+        String ply = (sr != null) ? sr.getPly() : client.getPly();
+        double dkl = (sr != null) ? sr.getDeckle() : client.getDeckle();
+        double ctl = (sr != null) ? sr.getCuttingLength() : client.getCuttingLength();
+        int topgsm = (sr != null) ? sr.getTopGsm() : client.getTopGsm();
+        int linergsm = (sr != null) ? sr.getLinerGsm() : client.getLinerGsm();
+        int flutegsm = (sr != null) ? sr.getFluteGsm() : client.getFluteGsm();
+        String paperTop = (sr != null) ? sr.getPaperTypeTop() : client.getPaperTypeTop();
+        String paperBottom = (sr != null) ? sr.getPaperTypeBottom() : client.getPaperTypeBottom();
+        String paperFlute = (sr != null) ? sr.getPaperTypeFlute() : client.getPaperTypeFlute();
+        String fluteType = (sr != null) ? sr.getFluteType() : client.getFluteType();
+        double cutLenOneUps = (sr != null) ? sr.getCuttingLengthOneUps() : 0;
+        double cutLenTwoUps = (sr != null) ? sr.getCuttingLengthTwoUps() : 0;
+
         int qnt = dto.getQuantity();
 
-        // =====================================================
-        // 🏭 MACHINE (only when SR exists)
-        // =====================================================
-        Machine machine = null;
-        MachineCapacityDTO machineCapacityDTO = null;
-
-        if (sr != null) {
-            machine = machineRepository.findByMachineName(fluteType);
-
-            machineCapacityDTO = new MachineCapacityDTO();
-            machineCapacityDTO.setMachineName(machine.getMachineName());
-            machineCapacityDTO.setMaxDeckle(machine.getMaxDeckle());
-            machineCapacityDTO.setMinDeckle(machine.getMinDeckle());
-            machineCapacityDTO.setMaxCuttingLength(machine.getMaxCuttingLength());
-            machineCapacityDTO.setMinCuttingLength(machine.getMinCuttingLength());
-            machineCapacityDTO.setNoOfBoxPerHour(machine.getNoOfBoxPerHour());
-            machineCapacityDTO.setNoOfSheetsPerHour(machine.getNoOfSheetsPerHour());
-        }
-
-        // =====================================================
-        // 🔢 WEIGHT CALCULATION (COMMON)
-        // =====================================================
         double topWeightPerSheet = (dkl * ctl * topgsm) / 10_000.0;
         double linerWeightPerSheet = (dkl * ctl * linergsm) / 10_000.0;
         double fluteWeightPerSheet = (dkl * ctl * flutegsm * 1.60) / 10_000.0;
@@ -401,14 +350,10 @@ public class OrderService {
         double linertotalweight = (linerWeightPerSheet * qnt) / 1000;
         double flutetotalweight = (fluteWeightPerSheet * qnt) / 1000;
 
-        // =====================================================
-        // 🧾 PRODUCTION DETAIL
-        // =====================================================
         ProductionDetail prddetail = new ProductionDetail();
         prddetail.setOrder(order);
         prddetail.setClient(order.getClient());
         prddetail.setClientNormalizer(order.getNormalizedClient());
-
         prddetail.setProductType(dto.getProductType());
         prddetail.setTypeOfProduct(dto.getTypeOfProduct());
         prddetail.setSize(dto.getSize());
@@ -430,12 +375,8 @@ public class OrderService {
         prddetail.setTotalTopWeightReq(toptotalweight);
         prddetail.setTotalLinerWeightReq(linertotalweight);
         prddetail.setTotalFluteWeightReq(flutetotalweight);
-
         prddetail.setPlain(qnt);
 
-        // =====================================================
-        // 📐 UPS / SHEETS / PLAIN — SAME LOGIC ALWAYS
-        // =====================================================
         String numberOnly = ply.replaceAll("[^0-9]", "");
         int plyNumber = numberOnly.isEmpty() ? 0 : Integer.parseInt(numberOnly);
 
@@ -486,33 +427,105 @@ public class OrderService {
         prddetail.setOnePieceCuttingLength(cutLenOneUps);
         prddetail.setTwoPieceCuttingLength(cutLenTwoUps);
 
+        Machine machine = machineRepository.findByMachineName(fluteType);
+        MachineCapacityDTO machineCapacityDTO = null;
+
         if (machine != null) {
             prddetail.setMachineName(machine.getMachineName());
             prddetail.setMaxDeckle((int) machine.getMaxDeckle());
             prddetail.setMinDeckle((int) machine.getMinDeckle());
             prddetail.setMaxCuttingLength(String.valueOf(machine.getMaxCuttingLength()));
             prddetail.setMinCuttingLength(String.valueOf(machine.getMinCuttingLength()));
-        } else {
-            prddetail.setMachineName(fluteType);
+
+            machineCapacityDTO = new MachineCapacityDTO(
+                    machine.getMachineName(),
+                    machine.getMaxDeckle(),
+                    machine.getMinDeckle(),
+                    machine.getMaxCuttingLength(),
+                    machine.getMinCuttingLength(),
+                    machine.getNoOfBoxPerHour(),
+                    machine.getNoOfSheetsPerHour()
+            );
         }
 
         productionDetailRepository.save(prddetail);
         order.setProductionDetail(prddetail);
         orderRepository.save(order);
 
+        if (sr == null) {
+            return new SuggestedReelsResponseDTO(
+                    Collections.emptyList(),
+                    Collections.emptyList(),
+                    Collections.emptyList(),
+                    false,
+                    "Order created using client master",
+                    order.getId(),
+                    machineCapacityDTO
+            );
+        }
+
+        OrderSuggestedReels osr = new OrderSuggestedReels();
+        osr.setOrder(order);
+
+        List<Double> candidateDeckles = List.of(
+                sr.getOneUps(),
+                sr.getTwoUps(),
+                sr.getThreeUps(),
+                sr.getFourUps()
+        );
+
+        osr.setUsedDeckle(Collections.max(candidateDeckles));
+
+        boolean needsFlute = sr.getFluteGsm() != sr.getLinerGsm();
+
+        for (String layer : List.of("TOP", "BOTTOM", "FLUTE")) {
+
+            if (layer.equals("FLUTE") && !needsFlute) continue;
+
+            int targetGsm = switch (layer) {
+                case "TOP" -> sr.getTopGsm();
+                case "BOTTOM" -> sr.getBottomGsm();
+                default -> sr.getFluteGsm();
+            };
+
+            String paperTypeNorm = switch (layer) {
+                case "TOP" -> sr.getPaperTypeTopNorm();
+                case "BOTTOM" -> sr.getPaperTypeBottomNorm();
+                default -> sr.getPaperTypeFluteNorm();
+            };
+
+            List<SuggestedReelItem> items = new ArrayList<>();
+
+            for (Double rawDeckle : candidateDeckles) {
+                items.addAll(findTopReels(
+                        targetGsm,
+                        (int) Math.floor(rawDeckle),
+                        paperTypeNorm,
+                        dto.getUnit()
+                ));
+            }
+
+            items = items.stream().distinct().limit(10).toList();
+
+            switch (layer) {
+                case "TOP" -> osr.getTopReels().addAll(items);
+                case "BOTTOM" -> osr.getBottomReels().addAll(items);
+                case "FLUTE" -> osr.getFluteReels().addAll(items);
+            }
+        }
+
+        orderSuggestedReelsRepository.save(osr);
+
         return new SuggestedReelsResponseDTO(
-                sr == null ? Collections.emptyList() : mapDTO(null, sr),
-                sr == null ? Collections.emptyList() : mapDTO(null, sr),
-                sr == null ? Collections.emptyList() : mapDTO(null, sr),
+                mapDTO(osr.getTopReels(), sr),
+                mapDTO(osr.getBottomReels(), sr),
+                mapDTO(osr.getFluteReels(), sr),
                 needsFlute,
-                sr == null
-                        ? "Order created using client master (suggested reel pending)"
-                        : "Order created with suggested reels",
+                "Order created with suggested reels",
                 order.getId(),
                 machineCapacityDTO
         );
     }
-
 
     public ProductionDetail getProductionDetailByOrderId(Long orderId) {
         Order order = orderRepository.findById(orderId)
@@ -534,12 +547,10 @@ public class OrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
-        // ✅ If order is completed, no suggestions
         if (order.getStatus() == OrderStatus.COMPLETED) {
             return createEmptyResponse("Order is completed. No suggestions available.");
         }
 
-        // ✅ If no suggested reels exist, return EMPTY response (NOT ERROR)
         Optional<OrderSuggestedReels> opt =
                 orderSuggestedReelsRepository.findByOrder(order);
 

@@ -198,7 +198,8 @@ public class ReelController {
         dto.setSupplierName(reel.getSupplierName());
         dto.setStatus(reel.getStatus());
         dto.setPaperType(reel.getPaperType());
-
+        dto.setUnit(reel.getUnit());
+        dto.setCreatedAt(reel.getCreatedAt());
         return ResponseEntity.ok(dto);
     }
 
