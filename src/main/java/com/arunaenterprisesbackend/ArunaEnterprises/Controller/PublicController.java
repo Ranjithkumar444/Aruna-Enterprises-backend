@@ -669,4 +669,17 @@ public class PublicController {
         return ResponseEntity.ok(saved);
     }
 
+    @PostMapping("/manipulateReelUnit")
+    public ResponseEntity<String> ManipulateUnit(@RequestBody ReelManipulativeDTO reelManipulativeDTO){
+        Reel reel = reelRepository.findByBarcodeId(reelManipulativeDTO.getBarcodeId());
+
+        if(reel == null){
+            return  ResponseEntity.notFound().build();
+        }
+
+        reel.setUnit(reelManipulativeDTO.getUnit());
+        reelRepository.save(reel);
+        return ResponseEntity.ok("Successful");
+    }
+
 }
