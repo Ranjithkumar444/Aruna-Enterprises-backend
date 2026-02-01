@@ -12,5 +12,6 @@ public class ReelStockSummaryDTO {
     private int deckle;
     private int gsm;
     private int burstFactor;
+    private String paperType;
     private Long reelCount;
 }
