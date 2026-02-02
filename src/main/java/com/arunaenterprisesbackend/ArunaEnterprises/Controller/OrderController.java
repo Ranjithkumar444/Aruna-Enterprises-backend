@@ -9,6 +9,7 @@ import com.arunaenterprisesbackend.ArunaEnterprises.Service.OrderService;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -66,7 +67,6 @@ public class OrderController {
         return ResponseEntity.ok(pd);
     }
 
-
     @PostMapping("/order/{orderId}/split")
     public ResponseEntity<String> splitOrder(
             @PathVariable Long orderId,
@@ -82,8 +82,8 @@ public class OrderController {
     }
 
     @GetMapping("/order/getInStockCompletedOrders")
-    public ResponseEntity<List<Order>> getAllInStockCompletedOrder(){
-        try{
+    public ResponseEntity<List<Order>> getAllInStockCompletedOrder() {
+        try {
             List<Order> orders = orderRepository.findByStatus(OrderStatus.COMPLETED);
 
             return ResponseEntity.ok().body(orders);
@@ -92,15 +92,14 @@ public class OrderController {
         }
     }
 
-
     @PutMapping("/order/{id}/status")
     public ResponseEntity<String> updateOrderStatus(
             @PathVariable Long id,
             @RequestBody Map<String, Object> payload) {
         try {
             OrderStatus status = OrderStatus.valueOf(payload.get("status").toString());
-            String transportNumber = payload.containsKey("transportNumber") ?
-                    payload.get("transportNumber").toString() : null;
+            String transportNumber = payload.containsKey("transportNumber") ? payload.get("transportNumber").toString()
+                    : null;
 
             orderservice.updateOrderStatus(id, status, transportNumber);
             return ResponseEntity.ok("Order status updated to " + status);
@@ -116,17 +115,34 @@ public class OrderController {
     }
 
     @GetMapping("/order/getOrdersByActiveStatus")
-    public ResponseEntity<List<OrderToDoListDTO>> getOrdersByActiveStatus() {
-        return ResponseEntity.ok(orderservice.getOrdersByActiveStatus());
-    }
+    public ResponseEntity<List<Order>> getOrdersByActiveStatus() {
+        List<OrderStatus> activeStatuses = Arrays.asList(
+                OrderStatus.TODO,
+                OrderStatus.IN_PROGRESS,
+                OrderStatus.COMPLETED);
 
+        // Fetch TODO, IN_PROGRESS, COMPLETED orders
+        List<Order> activeOrders = orderRepository.findByStatusIn(activeStatuses);
+
+        // Get current time in Central US time zone
+        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("America/Chicago"));
+        ZonedDateTime cutoff = now.minusDays(1);
+
+        // Fetch SHIPPED orders shipped within last 24 hours
+        List<Order> recentShippedOrders = orderRepository.findByStatusAndShippedAtAfter(
+                OrderStatus.SHIPPED,
+                cutoff);
+
+        activeOrders.addAll(recentShippedOrders);
+
+        return ResponseEntity.ok(activeOrders);
+    }
 
     @GetMapping("/order/getOrdersToDoAndInProgress")
     public ResponseEntity<List<Order>> GetOrdersByActiveStatus() {
         List<OrderStatus> activeStatuses = Arrays.asList(
                 OrderStatus.TODO,
-                OrderStatus.IN_PROGRESS
-        );
+                OrderStatus.IN_PROGRESS);
 
         List<Order> activeOrders = orderRepository.findByStatusIn(activeStatuses);
 
@@ -136,18 +152,16 @@ public class OrderController {
         return ResponseEntity.ok(activeOrders);
     }
 
-
     @GetMapping("/order/getCompletedOrders")
     public ResponseEntity<List<Order>> getOrderCompletedOrders() {
         List<OrderStatus> activeStatuses = List.of(
-                OrderStatus.COMPLETED
-        );
+                OrderStatus.COMPLETED);
         List<Order> orders = orderRepository.findByStatusIn(activeStatuses);
         return ResponseEntity.ok(orders);
     }
 
     @GetMapping("/order/history/getAllOrderReelUsage")
-    public ResponseEntity<List<OrderReelUsage>> getAllOrderReelUsage(){
+    public ResponseEntity<List<OrderReelUsage>> getAllOrderReelUsage() {
         List<OrderReelUsage> listoforder = orderReelUsageRepository.findAll();
 
         return ResponseEntity.ok(listoforder);
@@ -199,17 +213,18 @@ public class OrderController {
         private String message;
     }
 
-//    THIS IS FOR DAILY REPORTING PURPOSE
-//    ***********************************
+    // THIS IS FOR DAILY REPORTING PURPOSE
+    // ***********************************
     @GetMapping("/order/daily-production-usage")
-    public ResponseEntity<Map<String, List<DailyProductionUsageDTO>>> getDailyProductionUsage() {
+    public ResponseEntity<Map<String, List<DailyProductionUsageDTO>>> getDailyProductionUsage(
+            @RequestParam(value = "date", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         try {
             // 1. Define Timezone (IST)
             ZoneId istZone = ZoneId.of("Asia/Kolkata");
 
-            // 2. Calculate Start and End of Today
-            LocalDate today = LocalDate.now(istZone);
-            ZonedDateTime startOfDay = today.atStartOfDay(istZone);
+            // 2. Calculate Start and End of Today or Selected Date
+            LocalDate targetDate = (date != null) ? date : LocalDate.now(istZone);
+            ZonedDateTime startOfDay = targetDate.atStartOfDay(istZone);
             ZonedDateTime endOfDay = startOfDay.plusDays(1);
 
             // 3. Fetch records
@@ -235,8 +250,12 @@ public class OrderController {
                                         // OrderReelUsage Fields
                                         usage.getId(),
                                         usage.getWeightConsumed(),
-                                        usage.getCourgationIn() != null ? usage.getCourgationIn().withZoneSameInstant(istZone) : null,
-                                        usage.getCourgationOut() != null ? usage.getCourgationOut().withZoneSameInstant(istZone) : null,
+                                        usage.getCourgationIn() != null
+                                                ? usage.getCourgationIn().withZoneSameInstant(istZone)
+                                                : null,
+                                        usage.getCourgationOut() != null
+                                                ? usage.getCourgationOut().withZoneSameInstant(istZone)
+                                                : null,
                                         usage.getRecordedBy(),
                                         usage.getUsageType(),
                                         usage.getHowManyBox(),
@@ -256,10 +275,8 @@ public class OrderController {
                                         reel != null ? reel.getGsm() : 0,
                                         reel != null ? reel.getBurstFactor() : 0,
                                         reel != null ? reel.getDeckle() : 0,
-                                        reel != null ? reel.getPaperType() : "N/A"
-                                );
-                            }, Collectors.toList())
-                    ));
+                                        reel != null ? reel.getPaperType() : "N/A");
+                            }, Collectors.toList())));
 
             return ResponseEntity.ok(response);
 
@@ -268,13 +285,12 @@ public class OrderController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-//    this is also for daily reporting purpose
-
 
     @GetMapping("/reels/stock-summary")
     public ResponseEntity<List<com.arunaenterprisesbackend.ArunaEnterprises.DTO.ReelStockSummaryDTO>> getReelStockSummary() {
         try {
-            List<com.arunaenterprisesbackend.ArunaEnterprises.DTO.ReelStockSummaryDTO> summary = reelRepository.findReelStockSummary();
+            List<com.arunaenterprisesbackend.ArunaEnterprises.DTO.ReelStockSummaryDTO> summary = reelRepository
+                    .findReelStockSummary();
             return ResponseEntity.ok(summary);
         } catch (Exception e) {
             e.printStackTrace();
