@@ -35,7 +35,8 @@ public class ReelController {
     @Autowired
     private ReelUsageHistoryRepository reelUsageHistoryRepository;
 
-    @Autowired private ReelStockThresholdRepository repository;
+    @Autowired
+    private ReelStockThresholdRepository repository;
 
     @Autowired
     private ReelStockAlertRepository reelStockAlertRepository;
@@ -43,7 +44,8 @@ public class ReelController {
     @Autowired
     private ReelStockAlertService reelStockAlertService;
 
-    @Autowired private JWTService jwtService;
+    @Autowired
+    private JWTService jwtService;
 
     @Autowired
     private ARepository aRepository;
@@ -67,7 +69,8 @@ public class ReelController {
                 threshold.getDeckle(), threshold.getGsm(), threshold.getUnit());
 
         if (existing.isPresent()) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("Threshold already exists for this Deckle, GSM and Unit");
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body("Threshold already exists for this Deckle, GSM and Unit");
         }
 
         return ResponseEntity.ok(repository.save(threshold));
@@ -79,8 +82,6 @@ public class ReelController {
         return ResponseEntity.ok("Stock check triggered manually.");
     }
 
-
-
     @GetMapping("/reel/stock/alert/getAll")
     public List<ReelStockThreshold> getAllThresholds() {
         return repository.findAll();
@@ -90,7 +91,6 @@ public class ReelController {
     public List<ReelStockAlert> getUnacknowledgedAlerts() {
         return reelStockAlertRepository.findByAcknowledgedFalse();
     }
-
 
     @PostMapping("/register-reel")
     public ResponseEntity<ReelRegistrationResponseDTO> reelRegister(@RequestBody ReelDTO reeldata) {
@@ -105,8 +105,6 @@ public class ReelController {
                     .body(new ReelRegistrationResponseDTO(null));
         }
     }
-
-
 
     @GetMapping("/barcode/{barcodeId}")
     public ResponseEntity<byte[]> getBarcodeImage(@PathVariable String barcodeId) {
@@ -167,7 +165,8 @@ public class ReelController {
 
     @GetMapping("/inventory/getReelStocks")
     public ResponseEntity<List<Reel>> getReelStocks() {
-        List<ReelStatus> statuses = Arrays.asList(ReelStatus.IN_USE, ReelStatus.NOT_IN_USE,ReelStatus.PARTIALLY_USED_AVAILABLE);
+        List<ReelStatus> statuses = Arrays.asList(ReelStatus.IN_USE, ReelStatus.NOT_IN_USE,
+                ReelStatus.PARTIALLY_USED_AVAILABLE);
         List<Reel> reels = reelRepository.findByStatusIn(statuses);
         return ResponseEntity.ok(reels);
     }
@@ -236,11 +235,11 @@ public class ReelController {
         }
     }
 
-
     @GetMapping("/reel/active/by-barcode/{barcodeId}")
     public ResponseEntity<?> getAllActiveOrderReelUsageByBarcode(@PathVariable String barcodeId) {
         try {
-            List<OrderReelUsage> usages = orderReelUsageRepository.findAllByReelBarcodeIdAndCourgationOutIsNull(barcodeId);
+            List<OrderReelUsage> usages = orderReelUsageRepository
+                    .findAllByReelBarcodeIdAndCourgationOutIsNull(barcodeId);
 
             if (usages.isEmpty()) {
                 return ResponseEntity.notFound().build();
@@ -310,11 +309,19 @@ public class ReelController {
                 OrderUsageDetailsDTO usageDTO = new OrderUsageDetailsDTO();
                 Order order = usage.getOrder();
 
-                usageDTO.setClient(order.getClient());
-                usageDTO.setProductType(order.getProductType());
-                usageDTO.setQuantity(order.getQuantity());
-                usageDTO.setSize(order.getSize());
-                usageDTO.setUnit(order.getUnit());
+                if (order != null) {
+                    usageDTO.setClient(order.getClient());
+                    usageDTO.setProductType(order.getProductType());
+                    usageDTO.setQuantity(order.getQuantity());
+                    usageDTO.setSize(order.getSize());
+                    usageDTO.setUnit(order.getUnit());
+                } else {
+                    usageDTO.setClient("N/A");
+                    usageDTO.setProductType("N/A");
+                    usageDTO.setQuantity(0);
+                    usageDTO.setSize("N/A");
+                    usageDTO.setUnit("N/A");
+                }
                 usageDTO.setWeightConsumed(usage.getWeightConsumed());
                 usageDTO.setCourgationIn(usage.getCourgationIn());
                 usageDTO.setCourgationOut(usage.getCourgationOut());
@@ -351,25 +358,31 @@ public class ReelController {
 
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(createErrorResponse("Error manipulating reel: " + (e.getMessage() != null ? e.getMessage() : "Unknown error")));
+                    .body(createErrorResponse(
+                            "Error manipulating reel: " + (e.getMessage() != null ? e.getMessage() : "Unknown error")));
         }
     }
 
     private Reel findReelByAnyIdentifier(String searchTerm) {
         Reel reel = reelRepository.findByBarcodeId(searchTerm);
-        if (reel != null) return reel;
+        if (reel != null)
+            return reel;
 
         reel = reelRepository.findByBarcodeIdIgnoreCase(searchTerm);
-        if (reel != null) return reel;
+        if (reel != null)
+            return reel;
 
         try {
             Long reelNo = Long.parseLong(searchTerm);
             reel = reelRepository.findByReelNo(reelNo);
-            if (reel != null) return reel;
+            if (reel != null)
+                return reel;
 
             reel = reelRepository.findByBarcodeIdOrReelNo(searchTerm, reelNo);
-            if (reel != null) return reel;
-        } catch (NumberFormatException ignored) {}
+            if (reel != null)
+                return reel;
+        } catch (NumberFormatException ignored) {
+        }
 
         List<Reel> reels = reelRepository.findByBarcodeIdContainingIgnoreCase(searchTerm);
         if (!reels.isEmpty()) {
@@ -405,17 +418,14 @@ public class ReelController {
                         "barcodeId", reel.getBarcodeId(),
                         "reelNo", reel.getReelNo(),
                         "currentWeight", reel.getCurrentWeight(),
-                        "status", reel.getStatus()
-                )
-        );
+                        "status", reel.getStatus()));
     }
 
     private Map<String, Object> createErrorResponse(String message) {
         return Map.of(
                 "status", "error",
                 "message", message,
-                "timestamp", LocalDateTime.now()
-        );
+                "timestamp", LocalDateTime.now());
     }
 
     @GetMapping("/reel/usage/{barcodeId}")
@@ -438,4 +448,3 @@ public class ReelController {
     }
 
 }
-

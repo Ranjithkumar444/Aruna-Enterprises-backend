@@ -256,26 +256,32 @@ public class OrderController {
                                         usage.getCourgationOut() != null
                                                 ? usage.getCourgationOut().withZoneSameInstant(istZone)
                                                 : null,
-                                        usage.getRecordedBy(),
-                                        usage.getUsageType(),
+                                        usage.getRecordedBy() != null ? usage.getRecordedBy() : "Unknown",
+                                        usage.getUsageType() != null ? usage.getUsageType() : "N/A",
                                         usage.getHowManyBox(),
                                         usage.getPreviousWeight(),
 
                                         // Order Fields
                                         order != null ? order.getClient() : "N/A",
                                         order != null ? order.getProductType() : "N/A",
-                                        order != null ? order.getTypeOfProduct() : "N/A",
-                                        order != null ? order.getProductName() : "N/A",
+                                        order != null
+                                                ? (order.getTypeOfProduct() != null ? order.getTypeOfProduct() : "N/A")
+                                                : "N/A",
+                                        order != null
+                                                ? (order.getProductName() != null ? order.getProductName() : "N/A")
+                                                : "N/A",
                                         order != null ? order.getQuantity() : 0,
-                                        order != null ? order.getSize() : "N/A",
+                                        order != null ? (order.getSize() != null ? order.getSize() : "N/A") : "N/A",
 
                                         // Reel Fields
-                                        reel != null ? reel.getBarcodeId() : "N/A",
-                                        reel != null ? reel.getReelNo() : 0L,
+                                        reel != null ? (reel.getBarcodeId() != null ? reel.getBarcodeId() : "N/A")
+                                                : "N/A",
+                                        reel != null ? (reel.getReelNo() != null ? reel.getReelNo() : 0L) : 0L,
                                         reel != null ? reel.getGsm() : 0,
                                         reel != null ? reel.getBurstFactor() : 0,
                                         reel != null ? reel.getDeckle() : 0,
-                                        reel != null ? reel.getPaperType() : "N/A");
+                                        reel != null ? (reel.getPaperType() != null ? reel.getPaperType() : "N/A")
+                                                : "N/A");
                             }, Collectors.toList())));
 
             return ResponseEntity.ok(response);
