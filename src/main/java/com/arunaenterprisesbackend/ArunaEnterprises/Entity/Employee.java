@@ -47,4 +47,11 @@ public class Employee {
 
     @Column(name = "is_active")
     private boolean isActive = true;
+
+    private int pinCode;
+
+    @Lob
+    @Column(columnDefinition = "JSON")
+    private String embedding;
+
 }

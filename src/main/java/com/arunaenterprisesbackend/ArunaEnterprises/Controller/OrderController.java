@@ -1,6 +1,8 @@
 package com.arunaenterprisesbackend.ArunaEnterprises.Controller;
 
-import com.arunaenterprisesbackend.ArunaEnterprises.DTO.*;
+import com.arunaenterprisesbackend.ArunaEnterprises.DTO.OrderDTO;
+import com.arunaenterprisesbackend.ArunaEnterprises.DTO.OrderSplitDTO;
+import com.arunaenterprisesbackend.ArunaEnterprises.DTO.SuggestedReelsResponseDTO;
 import com.arunaenterprisesbackend.ArunaEnterprises.Entity.*;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.OrderReelUsageRepository;
 import com.arunaenterprisesbackend.ArunaEnterprises.Repository.OrderRepository;
@@ -21,6 +23,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import com.arunaenterprisesbackend.ArunaEnterprises.DTO.DailyProductionUsageDTO;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.TreeMap;
@@ -291,6 +294,7 @@ public class OrderController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+    // this is also for daily reporting purpose
 
     @GetMapping("/reels/stock-summary")
     public ResponseEntity<List<com.arunaenterprisesbackend.ArunaEnterprises.DTO.ReelStockSummaryDTO>> getReelStockSummary() {

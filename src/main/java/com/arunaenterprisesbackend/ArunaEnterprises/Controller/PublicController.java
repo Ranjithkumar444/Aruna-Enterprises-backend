@@ -9,6 +9,7 @@ import com.arunaenterprisesbackend.ArunaEnterprises.Service.AttendanceService;
 import com.arunaenterprisesbackend.ArunaEnterprises.Service.InventoryService;
 import com.arunaenterprisesbackend.ArunaEnterprises.Service.OrderService;
 import com.arunaenterprisesbackend.ArunaEnterprises.Service.WeightCalculation;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -97,8 +98,74 @@ public class PublicController {
         return "Hello World";
     }
 
+    @PostMapping("/ma/register-embedding")
+    public ResponseEntity<?> registerEmployeeEmbedding(
+            @RequestBody RegisterEmbeddingDTO dto) {
+
+        Optional<Employee> optionalEmployee =
+                employeeRepository.findByPinCode(dto.getPinCode());
+
+        if (optionalEmployee.isEmpty()) {
+            return ResponseEntity
+                    .badRequest()
+                    .body("EmployeeNotFound");
+        }
+
+        Employee employee = optionalEmployee.get();
+
+        if (employee.getEmbedding() != null) {
+            return ResponseEntity
+                    .badRequest()
+                    .body("EmbeddingAlreadyExsist");
+        }
+
+        // ✅ Validate embedding size
+        if (dto.getEmbedding() == null || dto.getEmbedding().size() != 192) {
+            return ResponseEntity
+                    .badRequest()
+                    .body("InvalidEmbeddingSize");
+        }
+
+        try {
+            // Convert List<Float> → JSON string for DB storage
+            ObjectMapper mapper = new ObjectMapper();
+            String embeddingJson =
+                    mapper.writeValueAsString(dto.getEmbedding());
+
+            employee.setEmbedding(embeddingJson);
+            employeeRepository.save(employee);
+
+            return ResponseEntity.ok("Success");
+
+        } catch (Exception e) {
+            return ResponseEntity
+                    .badRequest()
+                    .body("Error");
+        }
+    }
+
+
+    @GetMapping("/ma/getEmbeddings")
+    public ResponseEntity<?> getEmbeddings(@RequestParam int pinCode) {
+
+        Optional<Employee> optionalEmployee =
+                employeeRepository.findByPinCode(pinCode);
+
+        if (optionalEmployee.isEmpty()) {
+            return ResponseEntity
+                    .badRequest()
+                    .body("EmployeeNotFound");
+        }
+        if(optionalEmployee.get().getEmbedding() != null){
+            return ResponseEntity
+                    .badRequest()
+                    .body("EmbeddingNotFound");
+        }
+        return ResponseEntity.ok(optionalEmployee.get());
+    }
+
     //Checking the attendance
-    @PostMapping("/check-attendance")
+    @PostMapping("/ma/check-attendance")
     public ResponseEntity<Boolean> checkAttendance(@RequestBody Barcode barcode) {
         if (barcode == null || barcode.getBarcodeId() == null || barcode.getBarcodeId().isEmpty()) {
             return ResponseEntity.badRequest().body(false);
@@ -122,7 +189,7 @@ public class PublicController {
     }
 
 
-    @PostMapping("/scan-attendance")
+    @PostMapping("/ma/scan-attendance")
     public ResponseEntity<String> scanAttendance(@RequestBody Barcode barcodeId) {
         try {
             String response = String.valueOf(attendanceService.markAttendance(barcodeId.getBarcodeId()));
@@ -135,7 +202,7 @@ public class PublicController {
         }
     }
 
-    @PostMapping("/attendance-scan")
+    @PostMapping("/ma/attendance-scan")
     public String attendanceScan(@RequestBody  Barcode barcodeId){
         System.out.println(barcodeId.getBarcodeId());
         return barcodeId.getBarcodeId();
@@ -173,7 +240,7 @@ public class PublicController {
         }
     }
 
-    @PostMapping("/inventory/startedUsingReel")
+    @PostMapping("/ma/inventory/startedUsingReel")
     public ResponseEntity<String> reelStatusSet(@RequestBody BarcodeDTO barcodeDTO) {
         try {
             String barcodeId = barcodeDTO.getBarcodeId().trim();
@@ -237,7 +304,7 @@ public class PublicController {
         }
     }
 
-    @PostMapping("/inventory/reelWeightCalculation")
+    @PostMapping("/ma/inventory/reelWeightCalculation")
     public ResponseEntity<String> calculateWeight(@RequestBody CalculationDTO calculationDTO) {
         try {
             String rawBarcode = calculationDTO.getBarcodeId();
@@ -319,7 +386,7 @@ public class PublicController {
         }
     }
 
-    @PostMapping("/inventory/punching/reelWeightCalculation")
+    @PostMapping("/ma/inventory/punching/reelWeightCalculation")
     public ResponseEntity<String> punchingBoxWeightCalculation(@Valid @RequestBody PunchingBoxDTO dto) {
         try {
             String rawBarcode = dto.getBarcodeId();
@@ -402,8 +469,6 @@ public class PublicController {
         }
     }
 
-
-
     @GetMapping("/box/getAllBoxDetails")
     public ResponseEntity<List<Box>> getAllDetilsOfBox(){
         try{
@@ -427,7 +492,7 @@ public class PublicController {
         }
     }
 
-    @GetMapping("/order/getOrdersByActiveStatus")
+    @GetMapping("/ma/order/getOrdersByActiveStatus")
     public ResponseEntity<List<Order>> getOrdersByActiveStatus() {
         List<OrderStatus> activeStatuses = Arrays.asList(
                 OrderStatus.TODO,
@@ -453,7 +518,7 @@ public class PublicController {
         return ResponseEntity.ok(activeOrders);
     }
 
-    @GetMapping("/order/getOrderWhichInTodoAndInProgress")
+    @GetMapping("/ma/order/getOrderWhichInTodoAndInProgress")
     public ResponseEntity<List<Order>> GetOrdersByToDoAndInprogres() {
         List<OrderStatus> activeStatuses = Arrays.asList(
                 OrderStatus.TODO,
@@ -486,7 +551,7 @@ public class PublicController {
 //
 //    }
 
-    @GetMapping("/order/{orderId}/suggested-reels")
+    @GetMapping("/ma/order/{orderId}/suggested-reels")
     public ResponseEntity<?> getSuggestedReels(@PathVariable Long orderId) {
         try {
             SuggestedReelsResponseDTO response = orderService.getSuggestedReels(orderId);
@@ -496,7 +561,7 @@ public class PublicController {
         }
     }
 
-    @GetMapping("/autofilling/{barcodeId}")
+    @GetMapping("/ma/autofilling/{barcodeId}")
     public ResponseEntity<ReelCalculationAutoFillDTO> getAutoFill(
             @PathVariable String barcodeId) {
 
@@ -596,27 +661,27 @@ public class PublicController {
         return new int[]{l, w, h};
     }
 
-    @GetMapping("/inventory/A")
+    @GetMapping("/ma/inventory/A")
     public List<A> getAItems() {
         return aRepository.findAll();
     }
 
-    @GetMapping("/inventory/B")
+    @GetMapping("/ma/inventory/B")
     public List<B> getBItems() {
         return bRepository.findAll();
     }
 
-    @GetMapping("/inventory/C")
+    @GetMapping("/ma/inventory/C")
     public List<C> getCItems() {
         return cRepository.findAll();
     }
 
-    @GetMapping("/inventory/D")
+    @GetMapping("/ma/inventory/D")
     public List<D> getDItems() {
         return dRepository.findAll();
     }
 
-    @PutMapping("/inventory/A")
+    @PutMapping("/ma/inventory/A")
     public ResponseEntity<A> updateA(@RequestBody UpdateRequest req) {
 
         A item = aRepository.findByProduct(req.getProduct());
@@ -633,7 +698,7 @@ public class PublicController {
         return ResponseEntity.ok(saved);
     }
 
-    @PutMapping("/inventory/B")
+    @PutMapping("/ma/inventory/B")
     public ResponseEntity<B> updateB(@RequestBody UpdateRequest req) {
         B item = bRepository.findByProduct(req.getProduct());
         if (item == null) return ResponseEntity.notFound().build();
@@ -645,7 +710,7 @@ public class PublicController {
         return ResponseEntity.ok(saved);
     }
 
-    @PutMapping("/inventory/C")
+    @PutMapping("/ma/inventory/C")
     public ResponseEntity<C> updateC(@RequestBody UpdateRequest req) {
         C item = cRepository.findByProduct(req.getProduct());
         if (item == null) return ResponseEntity.notFound().build();
@@ -657,7 +722,7 @@ public class PublicController {
         return ResponseEntity.ok(saved);
     }
 
-    @PutMapping("/inventory/D")
+    @PutMapping("/ma/inventory/D")
     public ResponseEntity<D> updateD(@RequestBody UpdateRequest req) {
         D item = dRepository.findByProduct(req.getProduct());
         if (item == null) return ResponseEntity.notFound().build();
@@ -669,7 +734,7 @@ public class PublicController {
         return ResponseEntity.ok(saved);
     }
 
-    @PostMapping("/manipulateReelUnit")
+    @PostMapping("/ma/manipulateReelUnit")
     public ResponseEntity<String> ManipulateUnit(@RequestBody ReelManipulativeDTO reelManipulativeDTO){
         Reel reel = reelRepository.findByBarcodeId(reelManipulativeDTO.getBarcodeId());
 
