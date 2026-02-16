@@ -150,63 +150,63 @@ public class AttendanceService {
 
     public void calculateDailySalary(Employee employee, Attendance attendance) {
 
-        if (attendance.getCheckInTime() == null || attendance.getCheckOutTime() == null) {
-            throw new IllegalArgumentException("Missing check-in/check-out time.");
-        }
+        Salary salary = salaryRepository.findByEmployeeAndMonthAndYear(
+                employee,
+                attendance.getDate().getMonthValue(),
+                attendance.getDate().getYear()
+        );
 
-        ZonedDateTime checkIn = attendance.getCheckInTime();
-        ZonedDateTime checkOut = attendance.getCheckOutTime();
+        ZonedDateTime in = attendance.getCheckInTime();
+        ZonedDateTime out = attendance.getCheckOutTime();
         LocalDate date = attendance.getDate();
+
         boolean isSunday = date.getDayOfWeek() == DayOfWeek.SUNDAY;
         boolean isGovHoliday = attendance.isGovernmentHoliday();
 
-        Salary salary = salaryRepository.findByEmployeeAndMonthAndYear(
-                employee, date.getMonthValue(), date.getYear());
-        if (salary == null) {
-            throw new RuntimeException("Salary config missing.");
-        }
+        ZonedDateTime shiftStart = shiftStart(date);
+        ZonedDateTime shiftEnd = shiftEnd(date, salary.getWorkingDays());
 
-        double totalWorkedHours = Duration.between(checkIn, checkOut).toMinutes() / 60.0;
-        if (totalWorkedHours < 0) totalWorkedHours = 0;
-
-        double oneHourSalary = salary.getOneHourSalary();
-        double otPerHour = salary.getOtPerHour();
-        int workingDays = salary.getWorkingDays();
-
-        double daySalary = 0.0, otHours = 0.0, regularHours = 0.0;
+        double totalWorked = Duration.between(in, out).toMinutes() / 60.0;
+        double regularHours = 0.0;
+        double otHours = 0.0;
 
         if (isGovHoliday) {
-            otHours = totalWorkedHours;
-            daySalary = otHours * otPerHour;
+            otHours = totalWorked;
             attendance.setStatus(AttendanceStatus.OT_GOVT_HOLIDAY);
+        }
 
-        } else if (isSunday) {
-            otHours = totalWorkedHours;
-            daySalary = otHours * otPerHour;
-            attendance.setStatus(AttendanceStatus.OT_SUNDAY);
-
-        } else {
-            if (workingDays == 26) {
-                if (totalWorkedHours <= 12.0) {
-                    regularHours = totalWorkedHours;
-                    daySalary = regularHours * oneHourSalary;
-                } else {
-                    regularHours = 12.0;
-                    otHours = totalWorkedHours - 12.0;
-                    daySalary = (regularHours * oneHourSalary) + (otHours * otPerHour);
-                }
+        else if (isSunday) {
+            if (salary.getWorkingDays() == 26) {
+                otHours = totalWorked;
+                attendance.setStatus(AttendanceStatus.OT_SUNDAY);
             } else {
-                if (totalWorkedHours <= 8.5) {
-                    regularHours = totalWorkedHours;
-                    daySalary = regularHours * oneHourSalary;
-                } else {
-                    regularHours = 8.5;
-                    otHours = totalWorkedHours - 8.5;
-                    daySalary = (regularHours * oneHourSalary) + (otHours * otPerHour);
-                }
+                otHours = totalWorked;
+                attendance.setStatus(AttendanceStatus.OT_SUNDAY);
             }
+        }
+
+        else {
+            if (in.isBefore(shiftStart)) {
+                otHours += Duration.between(in, shiftStart).toMinutes() / 60.0;
+            }
+
+            if (out.isAfter(shiftEnd)) {
+                otHours += Duration.between(shiftEnd, out).toMinutes() / 60.0;
+            }
+
+            ZonedDateTime regStart = in.isBefore(shiftStart) ? shiftStart : in;
+            ZonedDateTime regEnd = out.isAfter(shiftEnd) ? shiftEnd : out;
+
+            if (regStart.isBefore(regEnd)) {
+                regularHours = Duration.between(regStart, regEnd).toMinutes() / 60.0;
+            }
+
             attendance.setStatus(AttendanceStatus.PRESENT);
         }
+
+        double daySalary =
+                (regularHours * salary.getOneHourSalary()) +
+                        (otHours * salary.getOtPerHour());
 
         salary.setTotalSalaryThisMonth(salary.getTotalSalaryThisMonth() + daySalary);
         salary.setTotalOvertimeHours(salary.getTotalOvertimeHours() + otHours);
@@ -217,4 +217,17 @@ public class AttendanceService {
         attendance.setDaySalary(daySalary);
         attendanceRepository.save(attendance);
     }
+
+    private ZonedDateTime shiftStart(LocalDate date) {
+        return date.atTime(9, 0).atZone(ZoneId.of("Asia/Kolkata"));
+    }
+
+    private ZonedDateTime shiftEnd(LocalDate date, int workingDays) {
+        if (workingDays == 26) {
+            return date.atTime(21, 0).atZone(ZoneId.of("Asia/Kolkata")); // 9 PM
+        } else {
+            return date.atTime(17, 30).atZone(ZoneId.of("Asia/Kolkata")); // 5:30 PM
+        }
+    }
+
 }

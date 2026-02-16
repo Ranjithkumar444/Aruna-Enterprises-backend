@@ -45,6 +45,11 @@ public class EmployeeService {
         String barcodeID = generateBarcodeId();
         employee.setBarcodeId(barcodeID);
 
+        String numberPart = barcodeID.split("-")[1];
+        int employeePinCode = Integer.parseInt(numberPart);
+
+        employee.setPinCode(employeePinCode);
+
         byte[] barcodeImage = BarcodeGenerator.generateBarcodeImage(barcodeID);
         employee.setBarcodeImage(barcodeImage);
 

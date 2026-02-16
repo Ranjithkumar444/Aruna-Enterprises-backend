@@ -1,3 +1,4 @@
+
 package com.arunaenterprisesbackend.ArunaEnterprises.Controller;
 
 import com.arunaenterprisesbackend.ArunaEnterprises.DTO.*;
@@ -16,6 +17,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -133,6 +135,8 @@ public class ReelController {
             dto.setReelNo(optionalReel.get().getReelNo());
             dto.setSupplierName(optionalReel.get().getSupplierName());
             dto.setCurrentWeight(optionalReel.get().getCurrentWeight());
+            dto.setUnit(optionalReel.get().getUnit());
+            dto.setCreatedAt(ZonedDateTime.from(optionalReel.get().getCreatedAt()));
 
             return ResponseEntity.ok(dto);
         } else {

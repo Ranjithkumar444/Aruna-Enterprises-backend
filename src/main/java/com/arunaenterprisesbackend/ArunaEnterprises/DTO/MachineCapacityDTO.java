@@ -16,4 +16,7 @@ public class MachineCapacityDTO {
     private double minDeckle;
     private double noOfSheetsPerHour;
     private double noOfBoxPerHour;
+
+    public MachineCapacityDTO(String machineName, double maxDeckle, double minDeckle, double maxCuttingLength, double minCuttingLength, double noOfBoxPerHour, double noOfSheetsPerHour) {
+    }
 }

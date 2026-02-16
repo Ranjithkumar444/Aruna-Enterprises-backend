@@ -15,11 +15,11 @@ public class ReelCalculationAutoFillDTO {
 
     private int cuttingLength;
 
-    private double length;
+    private int length;
 
-    private double width;
+    private int width;
 
-    private double height;
+    private int height;
 
     private int ply;
 }

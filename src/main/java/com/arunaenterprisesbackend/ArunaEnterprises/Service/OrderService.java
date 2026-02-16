@@ -299,45 +299,187 @@ public class OrderService {
 
     @Transactional
     public SuggestedReelsResponseDTO createOrder(OrderDTO dto) {
+
         Order order = createAndSaveOrder(dto);
 
-        Optional<SuggestedReel> sropt =  suggestedReelRepository
-                .findByClientNormalizerAndSizeAndProductNormalizer(order.getNormalizedClient(), order.getSize(), order.getProductName().toLowerCase().replaceAll("[^a-z0-9]", ""));
+        String productNorm = order.getProductName()
+                .toLowerCase().replaceAll("[^a-z0-9]", "");
 
+        Optional<SuggestedReel> sropt =
+                suggestedReelRepository.findByClientNormalizerAndSizeAndProductNormalizer(
+                        order.getNormalizedClient(),
+                        order.getSize(),
+                        productNorm
+                );
 
+        SuggestedReel sr = null;
+        Clients client = null;
 
-        SuggestedReel sr = sropt.orElseThrow(() ->
-                new RuntimeException("No suggested reel configuration found for this order"));
-
-        if (sr == null) {
-            return createEmptyResponse("Order created — no suggested reels found");
+        if (sropt.isPresent()) {
+            sr = sropt.get();
+        } else {
+            client = clientRepository
+                    .findByClientNormalizerAndSizeAndProductNormalizer(
+                            order.getNormalizedClient(),
+                            order.getSize(),
+                            productNorm
+                    )
+                    .orElseThrow(() -> new RuntimeException("Client master not found"));
         }
 
-        Machine machine = machineRepository.findByMachineName(sr.getFluteType());
-        List<Double> candidateDeckles = new ArrayList<>();
-        candidateDeckles.add(sr.getTwoUps());
-        candidateDeckles.add(sr.getThreeUps());
-        candidateDeckles.add(sr.getFourUps());
-        candidateDeckles.add(sr.getOneUps());
+        String ply = (sr != null) ? sr.getPly() : client.getPly();
+        double dkl = (sr != null) ? sr.getDeckle() : client.getDeckle();
+        double ctl = (sr != null) ? sr.getCuttingLength() : client.getCuttingLength();
+        int topgsm = (sr != null) ? sr.getTopGsm() : client.getTopGsm();
+        int linergsm = (sr != null) ? sr.getLinerGsm() : client.getLinerGsm();
+        int flutegsm = (sr != null) ? sr.getFluteGsm() : client.getFluteGsm();
+        String paperTop = (sr != null) ? sr.getPaperTypeTop() : client.getPaperTypeTop();
+        String paperBottom = (sr != null) ? sr.getPaperTypeBottom() : client.getPaperTypeBottom();
+        String paperFlute = (sr != null) ? sr.getPaperTypeFlute() : client.getPaperTypeFlute();
+        String fluteType = (sr != null) ? sr.getFluteType() : client.getFluteType();
+        double cutLenOneUps = (sr != null) ? sr.getCuttingLengthOneUps() : 0;
+        double cutLenTwoUps = (sr != null) ? sr.getCuttingLengthTwoUps() : 0;
 
+        int qnt = dto.getQuantity();
+
+        double topWeightPerSheet = (dkl * ctl * topgsm) / 10_000.0;
+        double linerWeightPerSheet = (dkl * ctl * linergsm) / 10_000.0;
+        double fluteWeightPerSheet = (dkl * ctl * flutegsm * 1.60) / 10_000.0;
+
+        double toptotalweight = (topWeightPerSheet * qnt) / 1000;
+        double linertotalweight = (linerWeightPerSheet * qnt) / 1000;
+        double flutetotalweight = (fluteWeightPerSheet * qnt) / 1000;
+
+        ProductionDetail prddetail = new ProductionDetail();
+        prddetail.setOrder(order);
+        prddetail.setClient(order.getClient());
+        prddetail.setClientNormalizer(order.getNormalizedClient());
+        prddetail.setProductType(dto.getProductType());
+        prddetail.setTypeOfProduct(dto.getTypeOfProduct());
+        prddetail.setSize(dto.getSize());
+        prddetail.setPly(ply);
+        prddetail.setQuantity(qnt);
+
+        int deckleRounded = (int) Math.floor(dkl);
+        prddetail.setDeckle(deckleRounded);
+        prddetail.setCuttingLength(ctl);
+
+        prddetail.setTopMaterial(paperTop);
+        prddetail.setLinerMaterial(paperBottom);
+        prddetail.setFluteMaterial(paperFlute);
+
+        prddetail.setTopGsm(topgsm);
+        prddetail.setLinerGsm(linergsm);
+        prddetail.setFluteGsm(flutegsm);
+
+        prddetail.setTotalTopWeightReq(toptotalweight);
+        prddetail.setTotalLinerWeightReq(linertotalweight);
+        prddetail.setTotalFluteWeightReq(flutetotalweight);
+        prddetail.setPlain(qnt);
+
+        String numberOnly = ply.replaceAll("[^0-9]", "");
+        int plyNumber = numberOnly.isEmpty() ? 0 : Integer.parseInt(numberOnly);
+
+        int sheets;
+
+        if (plyNumber == 3) {
+            sheets = qnt;
+            prddetail.setSheets(sheets);
+            prddetail.setOnePieceSheet(qnt);
+            prddetail.setOnePiecePlain(qnt);
+            prddetail.setTwoPiecePlain(qnt);
+            prddetail.setTwoPieceSheet(qnt);
+        } else if (plyNumber == 5) {
+            sheets = qnt * 2;
+            prddetail.setSheets(sheets);
+            prddetail.setOnePieceSheet(sheets);
+            prddetail.setOnePiecePlain(qnt);
+            prddetail.setTwoPiecePlain(qnt * 2);
+            prddetail.setTwoPieceSheet(qnt * 4);
+        } else if (plyNumber == 7) {
+            sheets = qnt * 3;
+            prddetail.setSheets(sheets);
+            prddetail.setOnePieceSheet(sheets);
+            prddetail.setOnePiecePlain(qnt);
+            prddetail.setTwoPiecePlain(qnt * 2);
+            prddetail.setTwoPieceSheet(qnt * 3);
+        } else {
+            sheets = qnt * 4;
+            prddetail.setSheets(sheets);
+            prddetail.setOnePieceSheet(sheets);
+            prddetail.setOnePiecePlain(qnt);
+            prddetail.setTwoPiecePlain(qnt * 2);
+            prddetail.setTwoPieceSheet(qnt * 4);
+        }
+
+        prddetail.setTwoUpsSheets(sheets / 2);
+        prddetail.setThreeUpsSheets(sheets / 3);
+        prddetail.setFourUpsSheets(sheets / 4);
+
+        prddetail.setTwoUpsPlain(qnt / 2);
+        prddetail.setThreeUpsPlain(qnt / 3);
+        prddetail.setFourUpsPlain(qnt / 4);
+
+        prddetail.setTwoUpsDeckle(deckleRounded * 2);
+        prddetail.setThreeUpsDeckle(deckleRounded * 3);
+        prddetail.setFourUpsDeckle(deckleRounded * 4);
+
+        prddetail.setOnePieceCuttingLength(cutLenOneUps);
+        prddetail.setTwoPieceCuttingLength(cutLenTwoUps);
+
+        Machine machine = machineRepository.findByMachineName(fluteType);
+        MachineCapacityDTO machineCapacityDTO = null;
+
+        if (machine != null) {
+            prddetail.setMachineName(machine.getMachineName());
+            prddetail.setMaxDeckle((int) machine.getMaxDeckle());
+            prddetail.setMinDeckle((int) machine.getMinDeckle());
+            prddetail.setMaxCuttingLength(String.valueOf(machine.getMaxCuttingLength()));
+            prddetail.setMinCuttingLength(String.valueOf(machine.getMinCuttingLength()));
+
+            machineCapacityDTO = new MachineCapacityDTO(
+                    machine.getMachineName(),
+                    machine.getMaxDeckle(),
+                    machine.getMinDeckle(),
+                    machine.getMaxCuttingLength(),
+                    machine.getMinCuttingLength(),
+                    machine.getNoOfBoxPerHour(),
+                    machine.getNoOfSheetsPerHour()
+            );
+        }
+
+        productionDetailRepository.save(prddetail);
+        order.setProductionDetail(prddetail);
+        orderRepository.save(order);
+
+        if (sr == null) {
+            return new SuggestedReelsResponseDTO(
+                    Collections.emptyList(),
+                    Collections.emptyList(),
+                    Collections.emptyList(),
+                    false,
+                    "Order created using client master",
+                    order.getId(),
+                    machineCapacityDTO
+            );
+        }
 
         OrderSuggestedReels osr = new OrderSuggestedReels();
         osr.setOrder(order);
+
+        List<Double> candidateDeckles = List.of(
+                sr.getOneUps(),
+                sr.getTwoUps(),
+                sr.getThreeUps(),
+                sr.getFourUps()
+        );
+
         osr.setUsedDeckle(Collections.max(candidateDeckles));
-
-        MachineCapacityDTO machineCapacityDTO = new MachineCapacityDTO();
-
-        machineCapacityDTO.setMachineName(machine.getMachineName());
-        machineCapacityDTO.setMaxDeckle(machine.getMaxDeckle());
-        machineCapacityDTO.setMinDeckle(machine.getMinDeckle());
-        machineCapacityDTO.setMaxCuttingLength(machine.getMaxCuttingLength());
-        machineCapacityDTO.setMinCuttingLength(machine.getMinCuttingLength());
-        machineCapacityDTO.setNoOfBoxPerHour(machine.getNoOfBoxPerHour());
-        machineCapacityDTO.setNoOfSheetsPerHour(machine.getNoOfSheetsPerHour());
 
         boolean needsFlute = sr.getFluteGsm() != sr.getLinerGsm();
 
         for (String layer : List.of("TOP", "BOTTOM", "FLUTE")) {
+
             if (layer.equals("FLUTE") && !needsFlute) continue;
 
             int targetGsm = switch (layer) {
@@ -352,164 +494,27 @@ public class OrderService {
                 default -> sr.getPaperTypeFluteNorm();
             };
 
-            List<SuggestedReelItem> bestItems = new ArrayList<>();
+            List<SuggestedReelItem> items = new ArrayList<>();
 
             for (Double rawDeckle : candidateDeckles) {
-                int deckle = (int) Math.floor(rawDeckle);
-                List<SuggestedReelItem> found = findTopReels(targetGsm, deckle, paperTypeNorm,dto.getUnit());
-                bestItems.addAll(found);
+                items.addAll(findTopReels(
+                        targetGsm,
+                        (int) Math.floor(rawDeckle),
+                        paperTypeNorm,
+                        dto.getUnit()
+                ));
             }
 
-            // Deduplicate and limit
-            bestItems = bestItems.stream()
-                    .distinct()
-                    .limit(10)
-                    .toList();
+            items = items.stream().distinct().limit(10).toList();
 
             switch (layer) {
-                case "TOP" -> osr.getTopReels().addAll(bestItems);
-                case "BOTTOM" -> osr.getBottomReels().addAll(bestItems);
-                case "FLUTE" -> osr.getFluteReels().addAll(bestItems);
+                case "TOP" -> osr.getTopReels().addAll(items);
+                case "BOTTOM" -> osr.getBottomReels().addAll(items);
+                case "FLUTE" -> osr.getFluteReels().addAll(items);
             }
         }
 
-        Optional<SuggestedReel> srr = suggestedReelRepository.findByClientNormalizerAndSizeAndProductNormalizer(order.getNormalizedClient(), order.getSize(),order.getProductName().toLowerCase().replaceAll("[^a-z0-9]", ""));
-        SuggestedReel suggestedreel = srr.get();
-
-        double dkl = suggestedreel.getDeckle();
-        double ctl = suggestedreel.getCuttingLength();
-        double topgsm = suggestedreel.getTopGsm();
-        double linergsm = suggestedreel.getLinerGsm();
-        double flutegsm = suggestedreel.getFluteGsm();
-
-        int qnt = dto.getQuantity();
-
-        double topWeightPerSheetGrams = (dkl * ctl * topgsm) / 10_000.0;
-        double linerWeightPerSheetGrams = (dkl * ctl * linergsm) / 10_000.0;
-        double fluteWeightPerSheetGrams = (dkl * ctl * flutegsm * 1.60) / 10_000.0;
-
-        double toptotalweight = (topWeightPerSheetGrams * qnt)/1000;
-        double linertotalweight = (linerWeightPerSheetGrams * qnt)/1000;
-        double flutetotalweight = (fluteWeightPerSheetGrams * qnt)/1000;
-
         orderSuggestedReelsRepository.save(osr);
-
-        ProductionDetail prddetail = new ProductionDetail();
-        prddetail.setClient(order.getClient());
-        prddetail.setClientNormalizer(sr.getClientNormalizer());
-        prddetail.setTotalTopWeightReq(toptotalweight);
-        prddetail.setTotalLinerWeightReq(linertotalweight);
-        prddetail.setTotalFluteWeightReq(flutetotalweight);
-        prddetail.setProductType(dto.getProductType());
-        prddetail.setTypeOfProduct(dto.getTypeOfProduct());
-        prddetail.setSize(dto.getSize());
-        prddetail.setPly(sr.getPly());
-        prddetail.setQuantity(dto.getQuantity());
-        int decklesRoundedDown = (int) Math.floor(sr.getDeckle());
-        prddetail.setDeckle(decklesRoundedDown);
-        prddetail.setCuttingLength(sr.getCuttingLength());
-        prddetail.setTopMaterial(sr.getPaperTypeTop());
-        prddetail.setFluteMaterial(sr.getPaperTypeFlute());
-        prddetail.setLinerMaterial(sr.getPaperTypeBottom());
-        order.setProductionDetail(prddetail);
-        prddetail.setOrder(order);
-        prddetail.setFluteGsm(sr.getFluteGsm());
-        prddetail.setTopGsm(sr.getTopGsm());
-        prddetail.setLinerGsm(sr.getLinerGsm());
-        prddetail.setPlain(dto.getQuantity());
-
-        String ply = sr.getPly();
-        String numberOnly = ply.replaceAll("[^0-9]", "");
-
-        int plyNumber = numberOnly.isEmpty() ? 0 : Integer.parseInt(numberOnly);
-
-        int sheets = 0;
-
-        int cutSheets = 0;
-
-        if(plyNumber == 3){
-
-            prddetail.setSheets(dto.getQuantity());
-            prddetail.setOnePieceSheet(dto.getQuantity());
-            prddetail.setTwoUpsSheets(dto.getQuantity()/2);
-            prddetail.setThreeUpsSheets(dto.getQuantity()/3);
-            prddetail.setFourUpsSheets(dto.getQuantity()/4);
-
-            prddetail.setOnePiecePlain(dto.getQuantity());
-            prddetail.setOnePieceSheet(dto.getQuantity());
-
-            prddetail.setTwoPiecePlain(dto.getQuantity());
-            prddetail.setTwoPieceSheet(dto.getQuantity());
-
-        }else if(plyNumber == 5){
-            sheets = dto.getQuantity()*2;
-            prddetail.setSheets(sheets);
-            prddetail.setOnePieceSheet(sheets);
-            prddetail.setTwoUpsSheets(sheets/2);
-            prddetail.setThreeUpsSheets(sheets/3);
-            prddetail.setFourUpsSheets(sheets/4);
-
-            prddetail.setOnePiecePlain(dto.getQuantity());
-            prddetail.setOnePieceSheet(dto.getQuantity()*2);
-
-            prddetail.setTwoPiecePlain(dto.getQuantity()*2);
-            prddetail.setTwoPieceSheet(dto.getQuantity()*4);
-        }else if(plyNumber == 7){
-            sheets = dto.getQuantity()*3;
-            prddetail.setSheets(sheets);
-            prddetail.setOnePieceSheet(sheets);
-            prddetail.setTwoUpsSheets(sheets/2);
-            prddetail.setThreeUpsSheets(sheets/3);
-            prddetail.setFourUpsSheets(sheets/4);
-
-            prddetail.setOnePiecePlain(dto.getQuantity());
-            prddetail.setOnePieceSheet(dto.getQuantity()*2);
-
-            prddetail.setTwoPiecePlain(dto.getQuantity()*2);
-            prddetail.setTwoPieceSheet(dto.getQuantity()*3);
-        }else{
-            sheets = dto.getQuantity()*4;
-            prddetail.setSheets(sheets);
-            prddetail.setOnePieceSheet(sheets);
-            prddetail.setTwoUpsSheets(sheets/2);
-            prddetail.setThreeUpsSheets(sheets/3);
-            prddetail.setFourUpsSheets(sheets/4);
-
-            prddetail.setOnePiecePlain(dto.getQuantity());
-            prddetail.setOnePieceSheet(dto.getQuantity()*2);
-
-            prddetail.setTwoPiecePlain(dto.getQuantity()*2);
-            prddetail.setTwoPieceSheet(dto.getQuantity()*4);
-        }
-
-        prddetail.setTwoUpsDeckle(decklesRoundedDown*2);
-        prddetail.setThreeUpsDeckle(decklesRoundedDown*3);
-        prddetail.setFourUpsDeckle(decklesRoundedDown*4);
-
-        prddetail.setOnePieceCuttingLength(sr.getCuttingLengthOneUps());
-        prddetail.setTwoPieceCuttingLength(sr.getCuttingLengthTwoUps());
-
-        prddetail.setTwoUpsPlain(dto.getQuantity()/2);
-        prddetail.setTwoUpsPlain(dto.getQuantity()/2);
-        prddetail.setThreeUpsPlain(dto.getQuantity()/3);
-        prddetail.setFourUpsPlain(dto.getQuantity()/4);
-
-        prddetail.setMachineName(machine.getMachineName());
-        prddetail.setMaxDeckle((int) machine.getMaxDeckle());
-        prddetail.setMinDeckle((int) machine.getMinDeckle());
-        prddetail.setMaxCuttingLength(String.valueOf(machine.getMaxCuttingLength()));
-        prddetail.setMinCuttingLength(String.valueOf(machine.getMinCuttingLength()));
-
-        prddetail.setDeckle(sr.getDeckle());
-
-        productionDetailRepository.save(prddetail);
-        order.setProductionDetail(prddetail);
-        orderRepository.save(order);
-
-        int minDeck = (int) machine.getMinDeckle();
-        int maxDeck = (int)machine.getMaxDeckle();
-        int minCut  = (int) machine.getMinCuttingLength();
-        int maxCut  = (int) machine.getMaxCuttingLength();
 
         return new SuggestedReelsResponseDTO(
                 mapDTO(osr.getTopReels(), sr),
@@ -519,7 +524,6 @@ public class OrderService {
                 "Order created with suggested reels",
                 order.getId(),
                 machineCapacityDTO
-
         );
     }
 
@@ -539,18 +543,26 @@ public class OrderService {
     }
 
     public SuggestedReelsResponseDTO getSuggestedReels(Long orderId) {
+
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
         if (order.getStatus() == OrderStatus.COMPLETED) {
-            throw new RuntimeException("Suggestions not available for completed orders");
+            return createEmptyResponse("Order is completed. No suggestions available.");
         }
 
-        OrderSuggestedReels suggestions = orderSuggestedReelsRepository.findByOrder(order)
-                .orElseThrow(() -> new RuntimeException("No suggestions found for this order"));
+        Optional<OrderSuggestedReels> opt =
+                orderSuggestedReelsRepository.findByOrder(order);
 
-        return mapToResponse(suggestions);
+        if (opt.isEmpty()) {
+            return createEmptyResponse(
+                    "No suggested reels available. Production created using client master."
+            );
+        }
+
+        return mapToResponse(opt.get());
     }
+
 
     public void updateOrderStatus(Long orderId, OrderStatus newStatus, String transportNumber) {
         Order order = orderRepository.findById(orderId)
@@ -811,5 +823,74 @@ public class OrderService {
         }
 
         orderRepository.save(newOrder);
+    }
+
+    public List<OrderToDoListDTO> getOrdersByActiveStatus() {
+
+        List<OrderStatus> activeStatuses = List.of(
+                OrderStatus.TODO,
+                OrderStatus.IN_PROGRESS,
+                OrderStatus.COMPLETED
+        );
+
+        List<Order> activeOrders =
+                orderRepository.findByStatusIn(activeStatuses);
+
+        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("America/Chicago"));
+        ZonedDateTime cutoff = now.minusDays(1);
+
+        List<Order> recentShippedOrders =
+                orderRepository.findByStatusAndShippedAtAfter(
+                        OrderStatus.SHIPPED,
+                        cutoff
+                );
+
+        activeOrders.addAll(recentShippedOrders);
+
+        return activeOrders.stream()
+                .map(this::mapToDTO)
+                .toList();
+    }
+
+    private OrderToDoListDTO mapToDTO(Order order) {
+
+        OrderToDoListDTO dto = new OrderToDoListDTO();
+
+        // 🔹 Order data
+        dto.setClient(order.getClient());
+        dto.setProductType(order.getProductType());
+        dto.setTypeOfProduct(order.getTypeOfProduct());
+        dto.setProductName(order.getProductName());
+        dto.setQuantity(order.getQuantity());
+        dto.setSize(order.getSize());
+        dto.setDeliveryAddress(order.getDeliveryAddress());
+        dto.setStatus(order.getStatus());
+        dto.setCreatedAt(order.getCreatedAt());
+        dto.setUpdatedAt(order.getUpdatedAt());
+        dto.setOrderCreatedDate(order.getOrderCreatedDate());
+        dto.setExpectedCompletionDate(order.getExpectedCompletionDate());
+        dto.setCreatedBy(order.getCreatedBy());
+        dto.setCompletedAt(order.getCompletedAt());
+        dto.setShippedAt(order.getShippedAt());
+        dto.setUnit(order.getUnit());
+        dto.setTransportNumber(order.getTransportNumber());
+        dto.setNormalizedClient(order.getNormalizedClient());
+        dto.setProductionDetail(order.getProductionDetail());
+        dto.setId(order.getId());
+
+        // 🔹 Client master lookup
+        clientRepository
+                .findByClientNormalizerAndSize(
+                        order.getNormalizedClient(),
+                        order.getSize()
+                )
+                .ifPresent(client -> {
+                    dto.setDeckle((int) client.getDeckle());
+                    dto.setTopGsm(client.getTopGsm());
+                    dto.setLinerGsm(client.getLinerGsm());
+                    dto.setFluteGsm(client.getFluteGsm());
+                });
+
+        return dto;
     }
 }
