@@ -81,4 +81,11 @@ public interface ReelRepository extends JpaRepository<Reel, Long> {
             "ORDER BY r.unit ASC, r.paperType ASC, r.deckle ASC, r.gsm ASC, r.burstFactor ASC")
     List<ReelStockSummaryDTO> findReelStockSummary();
 
+    @Query("""
+        SELECT DISTINCT r.paperType, r.paperTypeNormalized, r.gsm, r.burstFactor
+        FROM Reel r
+        WHERE r.paperTypeNormalized IS NOT NULL
+    """)
+    List<Object[]> findDistinctPaperCombinations();
+
 }

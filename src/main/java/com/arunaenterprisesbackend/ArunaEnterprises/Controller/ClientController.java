@@ -42,7 +42,7 @@ public class ClientController {
         String normalizedProduct = courgatedClientDTO.getProduct().toLowerCase().replaceAll("[^a-z0-9]", "");
         client.setProductNormalizer(normalizedProduct);
         client.setClientNormalizer(normalizedClient);
-
+        client.setConversionCost(courgatedClientDTO.getConversionCost());
         client.setFluteGsm(courgatedClientDTO.getFluteGsm());
         client.setLinerGsm(courgatedClientDTO.getLinerGsm());
         client.setMadeUpOf(courgatedClientDTO.getMadeUpOf());
@@ -55,8 +55,6 @@ public class ClientController {
         client.setSize(courgatedClientDTO.getSize());
         client.setPaperTypeFlute(courgatedClientDTO.getPaperTypeFlute());
         client.setBottomGsm(courgatedClientDTO.getLinerGsm()); // Assumed from original code
-        client.setProductionCostPerBox(courgatedClientDTO.getProductionCostPerBox());
-        client.setSellingPricePerBox(courgatedClientDTO.getSellingPricePerBox());
 
         client.setPaperTypeTopNorm(courgatedClientDTO.getPaperTypeTop().toLowerCase().replaceAll("[^a-z0-9]", ""));
         client.setPaperTypeBottomNorm(courgatedClientDTO.getPaperTypeBottom().toLowerCase().replaceAll("[^a-z0-9]", ""));
@@ -97,6 +95,7 @@ public class ClientController {
         reel.setBottomGsm(savedClient.getLinerGsm());
         reel.setTopGsm(savedClient.getTopGsm());
         reel.setLinerGsm(savedClient.getLinerGsm());
+        reel.setConversionCost(savedClient.getConversionCost());
         reel.setFluteGsm(savedClient.getFluteGsm());
         reel.setMadeUpOf(savedClient.getMadeUpOf());
         reel.setPaperTypeTop(savedClient.getPaperTypeTop());
@@ -110,8 +109,7 @@ public class ClientController {
         reel.setFiveUps(savedClient.getFiveUps());
         reel.setSixUps(savedClient.getSixUps());
         reel.setDescription(savedClient.getDescription());
-        reel.setProductionCostPerBox(savedClient.getProductionCostPerBox());
-        reel.setSellingPricePerBox(savedClient.getSellingPricePerBox());
+
         reel.setCuttingLengthTwoUps(savedClient.getCuttingLengthTwoUps());
         reel.setCuttingLengthOneUps(savedClient.getCuttingLengthOneUps());
         reel.setPaperTypeFluteNorm(savedClient.getPaperTypeFluteNorm());
@@ -137,6 +135,7 @@ public class ClientController {
         client.setProduct(punchingClientDTO.getProduct());
         client.setSize(punchingClientDTO.getSize());
         client.setPly(punchingClientDTO.getPly());
+        client.setConversionCost(punchingClientDTO.getConversionCost());
         client.setTopGsm(punchingClientDTO.getTopGsm());
         client.setLinerGsm(punchingClientDTO.getLinerGsm());
         client.setBottomGsm(punchingClientDTO.getLinerGsm()); // Assumed from original code
@@ -147,8 +146,7 @@ public class ClientController {
         client.setPaperTypeBottom(punchingClientDTO.getPaperTypeBottom());
         client.setPaperTypeFlute(punchingClientDTO.getPaperTypeFlute());
         client.setDescription(punchingClientDTO.getDescription());
-        client.setProductionCostPerBox(punchingClientDTO.getProductionCostPerBox());
-        client.setSellingPricePerBox(punchingClientDTO.getSellingPricePerBox());
+
 
         client.setPaperTypeTopNorm(punchingClientDTO.getPaperTypeTop().toLowerCase().replaceAll("[^a-z0-9]", ""));
         client.setPaperTypeBottomNorm(punchingClientDTO.getPaperTypeBottom().toLowerCase().replaceAll("[^a-z0-9]", ""));
@@ -204,6 +202,7 @@ public class ClientController {
         reel.setSize(savedClient.getSize());
         reel.setPly(savedClient.getPly());
         reel.setDeckle(savedClient.getDeckle());
+        reel.setConversionCost(savedClient.getConversionCost());
         reel.setCuttingLength(savedClient.getCuttingLength());
         reel.setBottomGsm(savedClient.getLinerGsm());
         reel.setTopGsm(savedClient.getTopGsm());
@@ -221,8 +220,6 @@ public class ClientController {
         reel.setFiveUps(savedClient.getFiveUps());
         reel.setSixUps(savedClient.getSixUps());
         reel.setDescription(savedClient.getDescription());
-        reel.setProductionCostPerBox(savedClient.getProductionCostPerBox());
-        reel.setSellingPricePerBox(savedClient.getSellingPricePerBox());
         reel.setCuttingLengthTwoUps(savedClient.getCuttingLengthTwoUps());
         reel.setCuttingLengthOneUps(savedClient.getCuttingLengthOneUps());
         reel.setPaperTypeFluteNorm(savedClient.getPaperTypeFluteNorm());
@@ -256,8 +253,6 @@ public class ClientController {
         client.setPaperTypeBottom(dto.getPaperTypeBottom());
         client.setPaperTypeFlute(dto.getPaperTypeFlute());
         client.setDescription(dto.getDescription());
-        client.setProductionCostPerBox(dto.getProductionCostPerBox());
-        client.setSellingPricePerBox(dto.getSellingPricePerBox());
 
         client.setPaperTypeTopNorm(dto.getPaperTypeTop().toLowerCase().replaceAll("[^a-z0-9]", ""));
         client.setPaperTypeBottomNorm(dto.getPaperTypeBottom().toLowerCase().replaceAll("[^a-z0-9]", ""));
@@ -291,8 +286,6 @@ public class ClientController {
         client.setPaperTypeBottom(dto.getPaperTypeBottom());
         client.setPaperTypeFlute(dto.getPaperTypeFlute());
         client.setDescription(dto.getDescription());
-        client.setProductionCostPerBox(dto.getProductionCostPerBox());
-        client.setSellingPricePerBox(dto.getSellingPricePerBox());
 
         client.setPaperTypeTopNorm(dto.getPaperTypeTop().toLowerCase().replaceAll("[^a-z0-9]", ""));
         client.setPaperTypeBottomNorm(dto.getPaperTypeBottom().toLowerCase().replaceAll("[^a-z0-9]", ""));
@@ -393,10 +386,6 @@ public class ClientController {
 
         client.setDescription(clients.getDescription());
 
-        client.setSellingPricePerBox(clients.getSellingPricePerBox());
-
-        client.setProductionCostPerBox(clients.getProductionCostPerBox());
-
         // Save client
         clientRepository.save(client);
 
@@ -422,8 +411,6 @@ public class ClientController {
         reel.setPaperTypeFlute(client.getPaperTypeFlute());
         reel.setFourUps(client.getFourUps());
         reel.setDescription(client.getDescription());
-        reel.setProductionCostPerBox(client.getProductionCostPerBox());
-        reel.setSellingPricePerBox(clients.getSellingPricePerBox());
 
         suggestedReelRepository.save(reel);
 
@@ -484,8 +471,6 @@ public class ClientController {
                 existingReel.setThreeUps(updatedClient.getThreeUps());
                 existingReel.setFourUps(updatedClient.getFourUps());
                 existingReel.setDescription(updatedClient.getDescription());
-                existingReel.setSellingPricePerBox(updatedClient.getSellingPricePerBox());
-                existingReel.setProductionCostPerBox(updatedClient.getProductionCostPerBox());
 
                 suggestedReelRepository.save(existingReel);
             }

@@ -20,5 +20,6 @@ public class ReelDTO {
     private String supplierName;
     private String createdBy;
     private String reelSet;
+    private String location;
 }
 

@@ -50,10 +50,6 @@ public class Clients {
 
     private String description;
 
-    private double sellingPricePerBox;
-
-    private double productionCostPerBox;
-
     private double fiveUps;
     private double sixUps;
 
@@ -63,4 +59,6 @@ public class Clients {
     private String piece;
 
     private String fluteType;
+
+    private double conversionCost;
 }

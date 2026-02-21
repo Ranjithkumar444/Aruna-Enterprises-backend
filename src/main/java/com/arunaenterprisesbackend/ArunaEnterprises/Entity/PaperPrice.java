@@ -5,27 +5,29 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.CreationTimestamp;
-
-import java.time.LocalDate;
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
-@Table(name = "daily_order_summary")
+@Table(
+        name = "paper_price",
+        uniqueConstraints = @UniqueConstraint(
+                columnNames = {"paperTypeNormalized", "gsm", "bf"}
+        )
+)
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class DailyOrderSummary {
+public class PaperPrice {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private LocalDate summaryDate;
+    private String paperType;
+    private String paperTypeNormalized;
 
+    private int gsm;
+    private int bf;
 
+    private double pricePerKg;
 }

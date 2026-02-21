@@ -25,4 +25,5 @@ public class ReelResponseDTO {
     private Integer previousWeight;
     private String unit;
     private LocalDate createdAt;
+    private String location;
 }

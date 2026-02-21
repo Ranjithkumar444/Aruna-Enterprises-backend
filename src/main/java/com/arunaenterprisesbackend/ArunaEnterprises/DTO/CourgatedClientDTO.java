@@ -24,8 +24,7 @@ public class CourgatedClientDTO {
     private String paperTypeFlute;
     private String description;
 
-    private double sellingPricePerBox;
-    private double productionCostPerBox;
+    private double conversionCost;
 
     private String fluteType;
 

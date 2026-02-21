@@ -1,141 +1,102 @@
 package com.arunaenterprisesbackend.ArunaEnterprises.Service;
 
-import com.arunaenterprisesbackend.ArunaEnterprises.DTO.QuotationRequest;
+import com.arunaenterprisesbackend.ArunaEnterprises.DTO.CorrugationQuotationRequest;
+import com.arunaenterprisesbackend.ArunaEnterprises.DTO.PaperLayerRequest;
+import com.arunaenterprisesbackend.ArunaEnterprises.DTO.PunchingQuotationRequest;
 import com.arunaenterprisesbackend.ArunaEnterprises.DTO.QuotationResponse;
+import com.arunaenterprisesbackend.ArunaEnterprises.Entity.PaperPrice;
+import com.arunaenterprisesbackend.ArunaEnterprises.Repository.PaperPriceRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 
 @Service
-public class    QuotationService {
+@RequiredArgsConstructor
+public class QuotationService {
 
-    private static final Map<String, Double> FLUTE_TAKE_UP_FACTORS = new HashMap<>();
-    private static final Map<String, Double> SHADE_PRICE_MODIFIERS = new HashMap<>();
-    private static final Map<Double, Double> BF_PRICE_MODIFIERS = new HashMap<>();
+    private final PaperPriceRepository paperPriceRepository;
 
-    static {
-        FLUTE_TAKE_UP_FACTORS.put("A", 1.55);
-        FLUTE_TAKE_UP_FACTORS.put("B", 1.47);
-        FLUTE_TAKE_UP_FACTORS.put("C", 1.41);
-        FLUTE_TAKE_UP_FACTORS.put("E", 1.60);
-        FLUTE_TAKE_UP_FACTORS.put("F", 1.60);
+    private static final int TRIM = 5;   // mm
+    private static final int JOINT = 30; // mm
 
-        // Define price modifiers for different shades.
-        // These are example values; use your own real-world data.
-        SHADE_PRICE_MODIFIERS.put("White", 1.15); // 15% premium for white
-        SHADE_PRICE_MODIFIERS.put("Brown", 1.00); // Base price for brown
-        SHADE_PRICE_MODIFIERS.put("Golden Yellow", 1.10); // 10% premium for golden yellow
-        SHADE_PRICE_MODIFIERS.put("Grey", 1.05); // 5% premium for grey
-        SHADE_PRICE_MODIFIERS.put("Black", 1.20); // 20% premium for black
+    // ================================
+    // 🔹 RSC CORRUGATION
+    // ================================
+    public QuotationResponse calculateCorrugation(CorrugationQuotationRequest request) {
 
-        // Define price modifiers for different BF values.
-        // This is a simplified example; a real-world scenario would use a more complex formula or a price matrix.
-        BF_PRICE_MODIFIERS.put(16.0, 1.00);
-        BF_PRICE_MODIFIERS.put(18.0, 1.02);
-        BF_PRICE_MODIFIERS.put(20.0, 1.05);
-        BF_PRICE_MODIFIERS.put(22.0, 1.08);
-        BF_PRICE_MODIFIERS.put(25.0, 1.12);
-        BF_PRICE_MODIFIERS.put(28.0, 1.15);
-        BF_PRICE_MODIFIERS.put(30.0, 1.18);
-        BF_PRICE_MODIFIERS.put(32.0, 1.22);
-        BF_PRICE_MODIFIERS.put(35.0, 1.25);
-        BF_PRICE_MODIFIERS.put(40.0, 1.30);
+        // flap = width / 2
+        int flap = request.getWidth() / 2;
+
+        // Board Size (mm)
+        double boardLength = (request.getLength() + request.getWidth()) * 2 + JOINT + TRIM;
+        double boardWidth = request.getHeight() + flap + TRIM;
+
+        return calculateCost(boardLength, boardWidth, request.getLayers(), request.getConversionCost());
     }
 
-    public QuotationResponse calculateQuotation(QuotationRequest req) {
-        QuotationResponse res = new QuotationResponse();
-        StringBuilder notes = new StringBuilder();
+    // ================================
+    // 🔹 PUNCHING
+    // ================================
+    public QuotationResponse calculatePunching(PunchingQuotationRequest request) {
 
-        // 1. Determine base board size (mm)
-        double baseBoardLength;
-        double baseBoardWidth;
+        double boardLength = request.getSheetLength();
+        double boardWidth = request.getSheetWidth();
 
-        if ("Corrugated RSC".equalsIgnoreCase(req.getBoxType())) {
-            double glueFlap = 25; // mm, default for RSC
-            double flapAllowance = 5; // mm extra for trimming/folding
-            baseBoardLength = ((req.getLength() + req.getWidth()) * 2) + glueFlap;
-            baseBoardWidth = req.getHeight() + req.getWidth() / 2 + flapAllowance;
-            notes.append("Box type: Corrugated RSC. Glue flap = ").append(glueFlap).append("mm, flap allowance = ").append(flapAllowance).append("mm. ");
-        } else if ("Die-Cut".equalsIgnoreCase(req.getBoxType())) {
-            baseBoardLength = req.getLength() + req.getWidth() + 40;
-            baseBoardWidth = req.getHeight() + req.getWidth() / 2 + 40;
-            notes.append("Box type: Die-Cut. Added extra waste for complex cuts. ");
-        } else {
-            throw new IllegalArgumentException("Unknown box type: " + req.getBoxType());
-        }
-
-        // Apply trim allowances from the request
-        baseBoardLength += req.getTrimAllowanceLength();
-        baseBoardWidth += req.getTrimAllowanceWidth();
-
-        // 2. Board area (sqm) for 1 box
-        double boardAreaPerBoxSqm = (baseBoardLength / 1000.0) * (baseBoardWidth / 1000.0);
-
-        // 3. Calculate total weight and cost by iterating through all layers
-        double totalWeightPerSqm = 0.0;
-        double totalCostPerSqm = 0.0;
-
-        for (QuotationRequest.LayerDetails layer : req.getLayers()) {
-            double layerWeightPerSqm = layer.getGsm() / 1000.0;
-            double adjustedWeight = layerWeightPerSqm;
-            double adjustedPricePerKg = layer.getPricePerKg();
-
-            // Apply flute take-up factor for flute layers
-            if (FLUTE_TAKE_UP_FACTORS.containsKey(layer.getFluteType())) {
-                double fluteTakeUpFactor = FLUTE_TAKE_UP_FACTORS.get(layer.getFluteType());
-                adjustedWeight = layerWeightPerSqm * fluteTakeUpFactor;
-                notes.append(String.format("Flute layer %s with GSM %.0f has a take-up factor of %.2f. ",
-                        layer.getFluteType(), layer.getGsm(), fluteTakeUpFactor));
-            }
-
-            // Apply price modifiers for shade and BF
-            if (SHADE_PRICE_MODIFIERS.containsKey(layer.getShade())) {
-                adjustedPricePerKg *= SHADE_PRICE_MODIFIERS.get(layer.getShade());
-                notes.append(String.format("Shade '%s' applied a price modifier. ", layer.getShade()));
-            }
-
-            if (BF_PRICE_MODIFIERS.containsKey(layer.getBf())) {
-                adjustedPricePerKg *= BF_PRICE_MODIFIERS.get(layer.getBf());
-                notes.append(String.format("BF '%.0f' applied a price modifier. ", layer.getBf()));
-            }
-
-            totalWeightPerSqm += adjustedWeight;
-            totalCostPerSqm += adjustedWeight * adjustedPricePerKg;
-        }
-
-        // 4. Material cost per box (add process waste)
-        double materialCost = totalCostPerSqm * boardAreaPerBoxSqm;
-        materialCost *= (1 + req.getProcessWastePercentage() / 100.0);
-
-        // 5. Conversion cost per box
-        double boxWeightForConversion = totalWeightPerSqm * boardAreaPerBoxSqm;
-        double conversionCost = req.getConversionCostPerKg() * boxWeightForConversion;
-
-        // 6. Total cost before margin
-        double totalBeforeMargin = materialCost + conversionCost;
-
-        // 7. Unit price with margin
-        double finalPrice = totalBeforeMargin * (1 + req.getGrossMarginPercentage() / 100.0);
-
-        // Set Response
-        res.setBoardSizeRequiredPerBox(String.format("%.0fmm x %.0fmm", baseBoardLength, baseBoardWidth));
-        res.setActualBoardAreaUsedPerBoxSqm(round(boardAreaPerBoxSqm));
-        res.setTotalGSM(round(totalWeightPerSqm * 1000));
-        res.setBoxWeightKg(round(boxWeightForConversion));
-        res.setMaterialCostPerBox(round(materialCost));
-        res.setConversionCostPerBox(round(conversionCost));
-        res.setTotalCostBeforeMarginPerBox(round(totalBeforeMargin));
-        res.setUnitPrice(round(finalPrice));
-
-        notes.append("Board area per box: ").append(round(boardAreaPerBoxSqm)).append(" sqm. ");
-        notes.append("Total weight per sqm: ").append(round(totalWeightPerSqm)).append(" kg. ");
-        res.setCalculationNotes(notes.toString());
-
-        return res;
+        return calculateCost(boardLength, boardWidth, request.getLayers(), request.getConversionCost());
     }
 
-    private double round(double val) {
-        return Math.round(val * 100.0) / 100.0;
+    // ================================
+    // 🔥 COMMON COST LOGIC
+    // ================================
+    private QuotationResponse calculateCost(double length, double width,
+                                            List<PaperLayerRequest> layers,
+                                            int conversionCost) {
+
+        double totalGsm = 0;
+        double weightedPrice = 0;
+
+        for (PaperLayerRequest layer : layers) {
+
+            String normalized = normalizePaperType(layer.getPaperType());
+
+            PaperPrice price = paperPriceRepository
+                    .findByPaperTypeNormalizedAndGsmAndBf(
+                            normalized,
+                            layer.getGsm(),
+                            layer.getBf()
+                    )
+                    .orElseThrow(() -> new RuntimeException(
+                            "Price not found for: " + normalized +
+                                    " GSM: " + layer.getGsm() +
+                                    " BF: " + layer.getBf()
+                    ));
+
+            totalGsm += layer.getGsm();
+            weightedPrice += price.getPricePerKg();
+        }
+
+        // avg price/kg
+        double avgPricePerKg = weightedPrice / layers.size();
+
+        // weight per sqm (kg)
+        double weightPerSqm = totalGsm / 1000.0;
+
+        // cost per sqm
+        double costPerSqm = weightPerSqm * avgPricePerKg;
+
+        // add conversion
+        costPerSqm += conversionCost;
+
+        // area (convert mm → meter)
+        double area = (length / 1000.0) * (width / 1000.0);
+
+        double finalCost = area * costPerSqm;
+
+        return new QuotationResponse(finalCost, weightPerSqm, costPerSqm);
+    }
+
+    private String normalizePaperType(String paperType) {
+        return paperType == null ? null : paperType.trim().toLowerCase();
     }
 }
