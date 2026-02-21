@@ -23,8 +23,7 @@ public class PunchingClientDTO {
     private String paperTypeFlute;
     private String description;
 
-    private double sellingPricePerBox;
-    private double productionCostPerBox;
+    private double conversionCost;
 
     private String fluteType;
     // Note: Punching DTO is already complete for input,

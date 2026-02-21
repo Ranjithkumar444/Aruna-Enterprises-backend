@@ -39,6 +39,7 @@ public class ReelService {
         reel.setPaperTypeNormalized(reeldata.getPaperType().toLowerCase().replaceAll("[^a-z0-9]", ""));
         reel.setUnit(reeldata.getUnit());
         reel.setPaperType(reeldata.getPaperType());
+        reel.setLocation(reeldata.getLocation());
 
         LocalDate createdAt = LocalDate.now(IST_ZONE);
         reel.setCreatedAt(createdAt);

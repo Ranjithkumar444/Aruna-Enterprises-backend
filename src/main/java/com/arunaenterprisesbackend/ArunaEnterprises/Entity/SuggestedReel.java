@@ -25,11 +25,9 @@ public class SuggestedReel {
     private String madeUpOf, paperTypeTop, paperTypeBottom;
     private double oneUps, twoUps, threeUps, fourUps;
     private String description;
-    private double sellingPricePerBox;
-    private double productionCostPerBox;
     private String paperTypeFlute;
 
-
+    private double conversionCost;
     private String paperTypeTopNorm;
     private String paperTypeBottomNorm;
     private String paperTypeFluteNorm;

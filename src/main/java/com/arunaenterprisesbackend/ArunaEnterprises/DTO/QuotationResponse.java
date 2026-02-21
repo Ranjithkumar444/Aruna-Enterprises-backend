@@ -1,24 +1,13 @@
 package com.arunaenterprisesbackend.ArunaEnterprises.DTO;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Data
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
 public class QuotationResponse {
 
-    private String boardSizeRequiredPerBox;
-    private double actualBoardAreaUsedPerBoxSqm;
-
-    private double totalGSM;
-    private double boxWeightKg;
-
-    private double materialCostPerBox;
-    private double conversionCostPerBox;
-    private double totalCostBeforeMarginPerBox;
-    private double unitPrice;
-
-    private String calculationNotes;
+    private double boxPrice;
+    private double totalWeight;
+    private double costPerSqm;
 }

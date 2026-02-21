@@ -156,7 +156,7 @@ public class PublicController {
                     .badRequest()
                     .body("EmployeeNotFound");
         }
-        if(optionalEmployee.get().getEmbedding() != null){
+        if(optionalEmployee.get().getEmbedding() == null){
             return ResponseEntity
                     .badRequest()
                     .body("EmbeddingNotFound");

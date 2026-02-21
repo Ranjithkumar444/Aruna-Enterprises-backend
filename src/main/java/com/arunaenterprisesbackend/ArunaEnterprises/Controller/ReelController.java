@@ -199,9 +199,11 @@ public class ReelController {
         dto.setCurrentWeight(reel.getCurrentWeight());
         dto.setReelNo(reel.getReelNo());
         dto.setSupplierName(reel.getSupplierName());
+        dto.setUnit(reel.getUnit());
+        dto.setCreatedAt(reel.getCreatedAt());
         dto.setStatus(reel.getStatus());
         dto.setPaperType(reel.getPaperType());
-
+        dto.setLocation(reel.getLocation());
         return ResponseEntity.ok(dto);
     }
 
